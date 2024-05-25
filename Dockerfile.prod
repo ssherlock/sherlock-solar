@@ -1,0 +1,17 @@
+FROM node:20-alpine AS builder
+RUN npm install -g npm@10.2.5
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --force
+COPY . ./
+RUN npm run build && npm prune --production
+
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app/build build/
+COPY --from=builder /app/node_modules node_modules/
+COPY package.json ./
+ENV PORT 5050
+EXPOSE 5050
+ENV NODE_ENV=production
+CMD ["node", "build/index.js"]

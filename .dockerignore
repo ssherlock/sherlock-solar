@@ -1,0 +1,27 @@
+node_modules
+.svelte-kit
+build
+.git
+.dockerignore
+.gitignore
+README.md
+Dockerfile
+Dockerfile.prod
+
+# Dockerfile
+# .dockerignore
+# .git
+# .gitignore
+# .gitattributes
+# README.md
+# .npmrc
+# .prettierrc
+# .eslintrc.cjs
+# .graphqlrc
+# .editorconfig
+# .svelte-kit
+# .vscode
+# node_modules
+# build
+# package
+# **/.env

@@ -1,0 +1,22 @@
+{
+    "short_name": "Sherlock Solar",
+    "name": "Sherlock Solar",
+    "description": "Sherlock Solar",
+    "icons": [
+      {
+        "src": "SherlockSolar_Logo_192x192.png",
+        "type": "image/png",
+        "sizes": "192x192"
+      },
+      {
+        "src": "SherlockSolar_Logo_512x512.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      }
+    ],
+    "start_url": "/main",
+    "background_color": "#3367D6",
+    "display": "standalone",
+    "scope": "/main",
+    "theme_color": "#3367D6"
+  }

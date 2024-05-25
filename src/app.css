@@ -1,0 +1,297 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.dgs-blue { 
+    font-weight: bold;
+    color: #1C3E97
+}
+
+.short-hr {
+    @apply w-48 h-0 border border-[#1C3E97] mx-auto
+}
+
+.dgs-title {
+    @apply mb-4 text-2xl font-bold text-center dgs-blue pt-2
+}
+
+.main-title {
+    @apply mb-4 text-4xl font-bold text-center dgs-blue pt-2
+}
+
+.dgs-red {
+    color: #ff0000;
+}
+
+.filter-dgs-blue{
+    font-weight: bold;
+    filter: invert(17%) sepia(45%) saturate(3937%) hue-rotate(215deg) brightness(94%) contrast(89%);
+}
+
+.button-group {
+    @apply mt-4 flex justify-items-center gap-2 mb-2
+}
+
+.button-group-left {
+    @apply mt-1 flex-none
+}
+
+.button-group-table {
+    @apply flex justify-items-center gap-2 
+}
+
+.dgs-button {
+    @apply block h-12 w-40 px-5 mx-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded
+}
+
+.download-button {
+    @apply block h-12 px-5 mx-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded justify-center items-center
+}  
+
+.add-button {
+    @apply block h-12 px-5 mx-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded
+} 
+
+/* .download-button-disabled {
+    @apply block h-12 px-5 mx-auto bg-gray-400 text-white font-bold py-2 rounded flex justify-center items-center
+}   */
+
+.map-button {
+    @apply block h-8 w-20 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded
+}
+
+.plus_button {
+    @apply 
+    sm:fixed bottom-20 right-14
+    rounded-full
+    bg-blue-800
+    text-white p-2
+    hover:bg-blue-600 m-2
+}
+
+.plus-button-small {
+    @apply 
+    rounded-full
+    bg-blue-800
+    text-white p-2
+    hover:bg-blue-600 m-2
+}
+
+.mandatory_field {
+    @apply 
+    text-red-600;
+}
+
+h1 {
+    @apply text-2xl text-center
+}
+
+tr {
+    @apply even:bg-white odd:bg-gray-300 border md:border-none block md:table-row
+}
+
+th {
+    @apply bg-gray-600 p-2 text-white font-bold md:border text-left block md:table-cell
+}
+
+td {
+    @apply p-2 md:border text-left block md:table-cell
+}
+
+label {
+    @apply mb-2 font-bold
+}
+
+.link {
+    @apply underline text-blue-600 hover:text-blue-800 
+}
+
+input, datalist, select {
+    @apply h-9 w-full px-2 py-2 text-sm border rounded-md focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-600 bg-white
+}
+
+textarea {
+    @apply w-full px-2 py-2 text-sm border rounded-md focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-600 bg-white
+}
+
+
+.validation-hint {
+    color: red;
+    padding: 6px 0;
+}
+
+.field-error {
+    color: red;
+}
+
+.field-success {
+    color: green;
+}
+
+.red-info-box {
+    @apply col-span-2 md:col-span-1 bg-red-100 text-black border border-black p-4
+}
+
+.title {
+    @apply text-2xl text-center pb-4
+}
+
+
+.large-checkbox {
+    @apply w-6 h-6 border-2 border-gray-300 bg-white
+}
+
+/* Line stuff */
+.line-horizontal {
+    /* width: 62px; */
+    height: 4px;
+    background-color: #cec5c5;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* From Right */
+  .dot-fromRightRed {
+    width: 12px;
+    height: 12px;
+    background-color: #f00;
+    border-radius: 50%;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: move-fromRight 4s linear infinite;
+  }
+
+  .dot-fromRightGreen {
+    width: 12px;
+    height: 12px;
+    background-color: rgb(41, 117, 5);
+    border-radius: 50%;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: move-fromRight 4s linear infinite;
+  }
+  
+  @keyframes move-fromRight {
+    0% {
+      right: 0;
+    }
+    100% {
+      right: calc(100% - 12px);
+    }
+  }
+
+  /* From left */
+  .dot-fromLeftRed {
+    width: 12px;
+    height: 12px;
+    background-color: #f00;
+    border-radius: 50%;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: move-fromLeft 4s linear infinite;
+  }
+
+  .dot-fromLeftGreen {
+    width: 12px;
+    height: 12px;
+    background-color: rgb(41, 117, 5);
+    border-radius: 50%;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: move-fromLeft 4s linear infinite;
+  }
+  
+  @keyframes move-fromLeft {
+    0% {
+      left: 0;
+    }
+    100% {
+      left: calc(100% - 12px);
+    }
+  }  
+
+  /* Vertical */
+  .line-vertical {
+    width: 4px;
+    height: 70px;
+    background-color: #cec5c5;
+    position: relative;
+  }
+
+  /* From top */
+  .dot-fromTopGreen {
+    width: 4px;
+    height: 10px;
+    background-color: rgb(41, 117, 5);
+    position: absolute;
+    bottom: 0;
+    top: 100%;
+    transform: translateY(-50%);
+    animation: move-fromTop 2s linear infinite;
+  }
+  
+  @keyframes move-fromTop {
+    0% {
+      top: 0;
+    }
+    100% {
+      bottom: calc(100% - 12px);
+    }
+  }
+
+    /* From bottom */
+    .dot-fromBottomRed {
+        width: 4px;
+        height: 10px;
+        background-color: #f00;
+        position: absolute;
+        top: 100%;
+        bottom: 0;
+        transform: translateY(-50%);
+        animation: move-fromBottom 2s linear infinite;
+    }
+
+    .dot-fromBottomGreen {
+        width: 4px;
+        height: 10px;
+        background-color: rgb(41, 117, 5);
+        position: absolute;
+        top: 100%;
+        bottom: 0;
+        transform: translateY(-50%);
+        animation: move-fromBottom 2s linear infinite;
+    }
+
+    @keyframes move-fromBottom {
+        0% {
+            bottom: 0;
+        }
+        100% {
+            top: calc(0% + 1px);
+        }
+    }
+
+    .grid {
+        display: grid;
+        /* grid-template-columns: repeat(3, 1fr); */
+        grid-template-columns: 2fr 1fr 2fr;
+      }
+
+      .line-container {
+        position: relative;
+      }
+      
+      .line-container > :global(*) {
+        position: absolute;
+        left: 0;
+        right: 0;
+        width: 100vw; /* Adjust this value as needed */
+      }      
