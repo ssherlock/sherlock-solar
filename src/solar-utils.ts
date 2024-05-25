@@ -21,7 +21,7 @@ export async function login(emailAddress: string, password: string): Promise<{ s
         }
 
         const jsonData = await response.json();
-        console.log('response: ', response.status + ' ' + JSON.stringify(jsonData, null, 2));
+        // console.log('response: ', response.status + ' ' + JSON.stringify(jsonData, null, 2));
         return { status, data: jsonData };
 
     } catch (Error: any) {
@@ -39,7 +39,7 @@ export async function login(emailAddress: string, password: string): Promise<{ s
 export async function retrieveSolarDetails(accessToken: string): Promise<[number | undefined, Response | undefined]> {
     try {
         accessToken = 'Bearer ' + await accessToken;
-        console.log('accessToken:' + accessToken);
+        // console.log('accessToken:' + accessToken);
         const response = await fetch('https://solar.sherlock.co.uk/retrieveSolarDetails', {
             method: 'GET',
             headers: {
@@ -54,7 +54,7 @@ export async function retrieveSolarDetails(accessToken: string): Promise<[number
 
         const jsonData = await response.json();
 
-        console.log('response: ', response.status + ' ' + jsonData);
+        // console.log('response: ', response.status + ' ' + jsonData);
         return [response.status, jsonData];
 
     } catch (error: any) {

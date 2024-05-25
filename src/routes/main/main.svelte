@@ -46,7 +46,6 @@ interface Result {
 }
 
 async function retrieveValues() {
-    console.log("Entering main.svelte");
     await authStore.subscribe((state: AuthState) => {
         isAuthenticated = state.isAuthenticated;
         accessToken = state.accessToken;
@@ -71,60 +70,66 @@ async function retrieveValues() {
         // let status = 200; 
         if (status === 200) {
             if (responseData) {
-                console.log("responseData: " + JSON.stringify(responseData));
+                // console.log("responseData: " + JSON.stringify(responseData));
 
                 // Access properties only after the check
                 const socData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'SoC');
                 if (socData) { // Check if socData is found before accessing its value
                     percentage = socData.value;
                 }
-                console.info('SOC:', percentage);
 
                 time = await formatDateTime(responseData.result[0].time);
-                console.info('Timestamp:', time);
 
                 const pvPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'pvPower');
                 if (pvPowerData) {
                     pvPowerValue = pvPowerData.value;
-                    pvPower = pvPowerData.value + " " + await pvPowerData.unit;
+                    // pvPower = String(pvPowerValue) + " " + await pvPowerData.unit;
+                    pvPower = displayValue(pvPowerData.value);
                 }
 
                 const batDischargePowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'batDischargePower');
                 if (batDischargePowerData) {
-                    batDisChargePower = batDischargePowerData.value + " " + await batDischargePowerData.unit;
                     batDischargePowerValue = batDischargePowerData.value;
+                    // batDisChargePower = String(batDischargePowerValue) + " " + await batDischargePowerData.unit;
+                    batDisChargePower = displayValue(batDischargePowerData.value);
                 }
                 const batChargePowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'batChargePower');
                 if (batChargePowerData) {
-                    batChargePower = batChargePowerData.value + " " + await batChargePowerData.unit;
                     batChargePowerValue = batChargePowerData.value;
+                    // batChargePower = String(batChargePowerValue) + " " + await batChargePowerData.unit;
+                    batChargePower = displayValue(batChargePowerData.value);
                 }
 
-                if (batDischargePowerValue === 0 && batChargePowerValue === 0) {
-                    chargingState = ChargingState.Nothing;
-                } else if (batDischargePowerValue > 0 && batChargePowerValue === 0) {
-                    chargingState = ChargingState.Discharging;
-                } else if (batDischargePowerValue === 0 && batChargePowerValue > 0) {
-                    chargingState = ChargingState.Charging;
+                if (batChargePowerData && batDischargePowerData) {
+                    if (batDischargePowerData.value === 0 && batChargePowerData.value === 0) {
+                        chargingState = ChargingState.Nothing;
+                    } else if (batDischargePowerData.value > 0 && batChargePowerData.value === 0) {
+                        chargingState = ChargingState.Discharging;
+                    } else if (batDischargePowerData.value === 0 && batChargePowerData.value > 0) {
+                        chargingState = ChargingState.Charging;
+                    }
                 }
 
                 //Grid Consumption vs Feed-in power
                 const gridConsumptionPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'gridConsumptionPower');
                 if (gridConsumptionPowerData) {
-                    gridConsumptionPower = gridConsumptionPowerData.value + " " + await gridConsumptionPowerData.unit;
                     gridConsumptionPowerValue = gridConsumptionPowerData.value;
+                    // gridConsumptionPower = String(gridConsumptionPowerValue) + " " + await gridConsumptionPowerData.unit;
+                    gridConsumptionPower = displayValue(gridConsumptionPowerData.value);
                 }
 
                 const feedinPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'feedinPower');
                 if (feedinPowerData) {
-                    feedinPower = feedinPowerData.value + " " + await feedinPowerData.unit;
                     feedinPowerValue = feedinPowerData.value;
+                    // feedinPower = String(feedinPowerValue) + " " + await feedinPowerData.unit;
+                    feedinPower = displayValue(feedinPowerData.value);
                 }
 
                 const loadPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'loadsPower');
                 if (loadPowerData) {
-                    loadPower = loadPowerData.value + " " + await loadPowerData.unit;
                     loadPowerValue = loadPowerData.value;
+                    // loadPower = String(loadPowerValue) + " " + await loadPowerData.unit;
+                    loadPower = displayValue(loadPowerData.value);
                 }
 
                 showSpinner = false;
@@ -133,12 +138,22 @@ async function retrieveValues() {
                 console.error("Error parsing JSON response data");
             }
         } else {
-            console.log("response returned with status: " + status);
             window.location.reload();
         }
     }
 }
 
+const displayValue = (value: number) => {
+    let returnString: string = "";
+    // if (value >= 1) {
+        returnString = String(value.toFixed(2)) + " kWh";
+    // } else {
+    //     value = parseFloat(value.toFixed(2)) * 1000;
+    //     returnString = value + " w";
+    // }
+
+    return returnString;
+}
 </script>
 
 <div class="grid">
@@ -155,7 +170,7 @@ async function retrieveValues() {
             </div>
         </div>
         <div class="flex justify-center items-center col-span-3">
-            <div class="text-center text-xs font-semibold">{pvPower}</div>
+            <div class="text-center text-xs font-semibold text-green-700">{pvPower}</div>
         </div>
         <div class="flex justify-center items-center">
             {#if pvPowerValue > 0}
@@ -179,10 +194,10 @@ async function retrieveValues() {
                 {/if}
             </div>
         </div>
-        <div class="text-center text-xs font-semibold">
+        <div class="text-left text-xs font-semibold">
             {#if feedinPowerValue > gridConsumptionPowerValue}
                 <div class="text-green-700">
-                    {gridConsumptionPower}
+                    {feedinPower}
                 </div>
             {:else}
                 <div class="text-red-700">
@@ -216,7 +231,7 @@ async function retrieveValues() {
             </div>
           <img src="house.png" alt="house" />
         </div>
-        <div class="text-center text-xs font-semibold">
+        <div class="text-right text-xs font-semibold">
           {#if feedinPowerValue > 0}
             <div class="text-red-700">{loadPower}</div>
           {:else}
