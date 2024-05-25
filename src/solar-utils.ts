@@ -63,6 +63,33 @@ export async function retrieveSolarDetails(accessToken: string): Promise<[number
     }
 }
 
+export async function retrieveMinSOCDetails(accessToken: string): Promise<[number | undefined, Response | undefined]> {
+    try {
+        accessToken = 'Bearer ' + await accessToken;
+        console.log('accessToken:' + accessToken);
+        const response = await fetch('https://solar.sherlock.co.uk/getMinSOC', {
+            method: 'GET',
+            headers: {
+                'Authorization': accessToken
+            }
+        });
+
+        if (response.status !== 200) {
+            console.log('Error: ' + await response.status);
+            return [response.status, undefined];
+        }
+
+        const jsonData = await response.json();
+
+        console.log('response: ', response.status + ' ' + JSON.stringify(jsonData, null, 2));
+        return [response.status, jsonData];
+
+    } catch (error: any) {
+        console.log('Err: ' + error.message);
+        return [undefined, undefined];
+    }
+}
+
 export function formatDateTime(dateTimeString: string): string {
     // Split the input string into date, time, and offset parts
     const [date, time, offset] = dateTimeString.split(' ');

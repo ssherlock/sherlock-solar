@@ -1,14 +1,13 @@
 <script lang="ts">
     import Battery from '$lib/components/Battery.svelte';
-    import { onMount } from 'svelte';
     import authStore, { type AuthState } from '../../stores/authStore';
-    import { ChargingState, formatDateTime, retrieveSolarDetails } from '../../solar-utils';
+    import { ChargingState, formatDateTime, retrieveMinSOCDetails, retrieveSolarDetails } from '../../solar-utils';
 	import Line from '$lib/components/Line.svelte';
 	import { RefreshCcw } from 'lucide-svelte';
-	import { goto } from '$app/navigation';
 	import { SyncLoader } from 'svelte-loading-spinners';
 
 let percentage: number = 0;
+let minSOCDisplay: string = '';
 let time: string = '';
 let pvPower: string = '';
 let pvPowerValue: number = 0;
@@ -31,6 +30,7 @@ let showSpinner: boolean = true;
 $: time;
 $: pvPower;
 $: percentage;
+$: minSOCDisplay;
 
 interface Data {
   name: string;
@@ -44,6 +44,32 @@ interface Result {
   deviceSN: string;
   time: string;
 }
+
+
+async function retrieveMinSOC() {
+    await authStore.subscribe((state: AuthState) => {
+        isAuthenticated = state.isAuthenticated;
+        accessToken = state.accessToken;
+        user = state.user;
+    });
+
+    // let accessToken = "dummy";
+    if (accessToken) {
+        const [status, responseData] = await retrieveMinSOCDetails(accessToken);
+
+        // let status = 200; 
+        if (status === 200) {
+            if (responseData) {
+            // const socData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'minSoc');
+            // if (socData) { // Check if socData is found before accessing its value
+            //     minSOC = socData.value;
+            // }
+                minSOCDisplay = responseData.result.minSoc + "%";
+            }
+        }
+    }
+}
+
 
 async function retrieveValues() {
     await authStore.subscribe((state: AuthState) => {
@@ -256,9 +282,9 @@ const displayValue = (value: number) => {
             <Battery percentage={percentage} chargingState={chargingState} />
         </div>
     </div>
-    <!-- <div class="flex justify-left items-center">
-        <div class="text-center text-xs font-semibold">Min SOC: 35%</div>
-    </div> -->
+    <div class="flex justify-left items-center">
+        <div class="text-center text-xs font-semibold">Min SOC: {minSOCDisplay}</div>
+    </div>
 </div>   
 <div class="flex justify-center items-center">
     <div class="text-center text-sm font-semibold">Last Updated: <span class="text-green-700">{time}</span>
@@ -270,6 +296,8 @@ const displayValue = (value: number) => {
                     {#await retrieveValues()}
                         <p>Loading. Please wait ...</p>
                         <SyncLoader size="60" color="#000000" unit="px" duration="1s" />
+                        {#await retrieveMinSOC()}{/await}
+
                     {:then} 
                         showSpinner = false;
                         <svelte:component class="justify-center" this={RefreshCcw} />
