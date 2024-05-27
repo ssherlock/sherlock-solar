@@ -81,7 +81,7 @@ export async function retrieveMinSOCDetails(accessToken: string): Promise<[numbe
 
         const jsonData = await response.json();
 
-        console.log('response: ', response.status + ' ' + JSON.stringify(jsonData, null, 2));
+        // console.log('response: ', response.status + ' ' + JSON.stringify(jsonData, null, 2));
         return [response.status, jsonData];
 
     } catch (error: any) {
