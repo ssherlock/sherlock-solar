@@ -54,7 +54,36 @@ export async function retrieveSolarDetails(accessToken: string): Promise<[number
 
         const jsonData = await response.json();
 
-        // console.log('response: ', response.status + ' ' + jsonData);
+        // console.log('retrieveSolarDetails response: ', response.status + ' ' + JSON.stringify(jsonData));
+        return [response.status, jsonData];
+
+    } catch (error: any) {
+        console.log('Err: ' + error.message);
+        return [undefined, undefined];
+    }
+}
+
+export async function setMinSOCDetails(accessToken: string, minSocValue: number): Promise<[number | undefined, Response | undefined]> {
+    try {
+        accessToken = 'Bearer ' + await accessToken;
+        // console.log('accessToken:' + accessToken);
+        const response = await fetch('https://solar.sherlock.co.uk/setMinSOC', {
+            method: 'POST',
+            headers: {
+                'Authorization': accessToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ "min_soc": minSocValue })
+        });
+
+        if (response.status !== 200) {
+            console.log('Error: ' + await response.status);
+            return [response.status, undefined];
+        }
+
+        const jsonData = await response.json();
+
+        // console.log('response: ', response.status + ' ' + JSON.stringify(jsonData, null, 2));
         return [response.status, jsonData];
 
     } catch (error: any) {
@@ -66,7 +95,7 @@ export async function retrieveSolarDetails(accessToken: string): Promise<[number
 export async function retrieveMinSOCDetails(accessToken: string): Promise<[number | undefined, Response | undefined]> {
     try {
         accessToken = 'Bearer ' + await accessToken;
-        console.log('accessToken:' + accessToken);
+        // console.log('accessToken:' + accessToken);
         const response = await fetch('https://solar.sherlock.co.uk/getMinSOC', {
             method: 'GET',
             headers: {
@@ -81,7 +110,7 @@ export async function retrieveMinSOCDetails(accessToken: string): Promise<[numbe
 
         const jsonData = await response.json();
 
-        // console.log('response: ', response.status + ' ' + JSON.stringify(jsonData, null, 2));
+        // console.log('retrieveMinSOCDetails response: ', response.status + ' ' + JSON.stringify(jsonData, null, 2));
         return [response.status, jsonData];
 
     } catch (error: any) {

@@ -111,11 +111,11 @@
             Login
             </button>
         </div>
-        <div class="mt-4 text-center">
+        <!-- <div class="mt-4 text-center">
             <p class="text-sm">
                 Can't login? <button class="text-blue-600 hover:underline" on:click|preventDefault={() =>{sendResetLink(email)}}> Send reset link</button>
             </p>
-        </div>
+        </div> -->
         <div class="mt-4 text-center">
           {#if displayType === "ERROR"}
             <p class="field-error">

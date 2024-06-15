@@ -1,16 +1,6 @@
 <script lang="ts">
   let lineRef: HTMLDivElement;
   export let direction:string = '';
-
-  // function handleLineRefHorizontal(node: HTMLDivElement) {
-  //   lineRef = node;
-  //   const lineWidth = lineRef.offsetWidth;
-  //   const dotAnimation = lineRef.querySelector('.dot-fromTop') as HTMLElement;
-  //   console.log("dotAnimation: ", dotAnimation);
-  //   if (dotAnimation) {
-  //     dotAnimation.style.animationDuration = `${(lineWidth / 100) * 3}s`;
-  //   }
-  // }
 </script>
   
 {#if direction === 'horizontal_fromLeftRed'}

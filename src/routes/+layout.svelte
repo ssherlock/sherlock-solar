@@ -1,13 +1,10 @@
 <script	script lang="ts">
-  import { onMount } from 'svelte'
   import '../app.css';
   import Navbar from '$lib/components/Navbar.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
-  import Battery from '$lib/components/Battery.svelte';
   import Login from '$lib/components/Login.svelte';
 	import authStore, { type AuthState } from '../stores/authStore';
-	import Tabs from '$lib/components/Tabs.svelte';
-
+	
   let open = false; 
 
   let isAuthenticated: boolean;

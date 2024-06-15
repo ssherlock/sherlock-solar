@@ -1,186 +1,221 @@
 <script lang="ts">
     import Battery from '$lib/components/Battery.svelte';
     import authStore, { type AuthState } from '../../stores/authStore';
-    import { ChargingState, formatDateTime, retrieveMinSOCDetails, retrieveSolarDetails } from '../../solar-utils';
+    import { ChargingState, formatDateTime, retrieveMinSOCDetails, retrieveSolarDetails, setMinSOCDetails } from '../../solar-utils';
 	import Line from '$lib/components/Line.svelte';
 	import { RefreshCcw } from 'lucide-svelte';
 	import { SyncLoader } from 'svelte-loading-spinners';
+	import SOCModal from '$lib/components/SOCModal.svelte';
 
-let percentage: number = 0;
-let minSOCDisplay: string = '';
-let time: string = '';
-let pvPower: string = '';
-let pvPowerValue: number = 0;
-let batDischargePowerValue: number = 0;
-let batDisChargePower: string = '';
-let batChargePowerValue: number = 0;
-let batChargePower: string = '';
-let gridConsumptionPower: string = '';
-let gridConsumptionPowerValue: number = 0;
-let feedinPower: string = '';
-let feedinPowerValue: number = 0;
-let loadPower: string = '';
-let loadPowerValue: number = 0;
-let chargingState: ChargingState = ChargingState.Nothing;
-let isAuthenticated: boolean = false;
-let accessToken: string | null = null;
-let user: any | null = null;
-let showSpinner: boolean = true;
+    let percentage: number = 0;
+    let time: string = '';
+    let pvPower: string = '';
+    let pvPowerValue: number = 0;
+    let batDischargePowerValue: number = 0;
+    let batDisChargePower: string = '';
+    let batChargePowerValue: number = 0;
+    let batChargePower: string = '';
+    let gridConsumptionPower: string = '';
+    let gridConsumptionPowerValue: number = 0;
+    let feedinPower: string = '';
+    let feedinPowerValue: number = 0;
+    let loadPower: string = '';
+    let loadPowerValue: number = 0;
+    let chargingState: ChargingState = ChargingState.Nothing;
+    let isAuthenticated: boolean = false;
+    let accessToken: string | null = null;
+    let user: any | null = null;
+    let showSpinner: boolean = true;
+    let showSOCModal: boolean = false;
+    let socValue: number = 0;
 
-$: time;
-$: pvPower;
-$: percentage;
-$: minSOCDisplay;
+    $: time;
+    $: pvPower;
+    $: percentage;
+    $: showSOCModal;
+    $: socValue;
 
-interface Data {
-  name: string;
-  unit: string;
-  value: number | string;
-  variable: string;
-}
-
-interface Result {
-  datas: Data[];
-  deviceSN: string;
-  time: string;
-}
-
-
-async function retrieveMinSOC() {
-    await authStore.subscribe((state: AuthState) => {
-        isAuthenticated = state.isAuthenticated;
-        accessToken = state.accessToken;
-        user = state.user;
-    });
-
-    // let accessToken = "dummy";
-    if (accessToken) {
-        const [status, responseData] = await retrieveMinSOCDetails(accessToken);
-
-        // let status = 200; 
-        if (status === 200) {
-            if (responseData) {
-            // const socData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'minSoc');
-            // if (socData) { // Check if socData is found before accessing its value
-            //     minSOC = socData.value;
-            // }
-                minSOCDisplay = responseData.result.minSoc + "%";
-            }
-        }
+    interface Data {
+    name: string;
+    unit: string;
+    value: number | string;
+    variable: string;
     }
-}
 
+    interface Result {
+    datas: Data[];
+    deviceSN: string;
+    time: string;
+    }
 
-async function retrieveValues() {
-    await authStore.subscribe((state: AuthState) => {
-        isAuthenticated = state.isAuthenticated;
-        accessToken = state.accessToken;
-        user = state.user;
-    });
+    async function setMinSOC(minSocValue: number) {
+        await authStore.subscribe((state: AuthState) => {
+            isAuthenticated = state.isAuthenticated;
+            accessToken = state.accessToken;
+            user = state.user;
+        });
 
-    // let accessToken = "dummy";
-    if (accessToken) {
-        //get the solar details
+        // let accessToken = "dummy";
+        if (accessToken) {
+            const [status, responseData] = await setMinSOCDetails(accessToken, minSocValue);
 
-        // const responseData: any | null = await JSON.parse('{"errno":0,"msg":"success","result":[{"datas":[{"name":"PVPower","unit":"kW","value":0.445,"variable":"pvPower"},{"name":"PV1Volt","unit":"V","value":221.9,"variable":"pv1Volt"},{"name":"PV1Current","unit":"A","value":2,"variable":"pv1Current"},{"name":"PV1Power","unit":"kW","value":0.444,"variable":"pv1Power"},{"name":"PV2Volt","unit":"V","value":5.8,"variable":"pv2Volt"},{"name":"PV2Current","unit":"A","value":0.1,"variable":"pv2Current"},{"name":"PV2Power","unit":"kW","value":0.001,"variable":"pv2Power"},{"name":"EPSPower","unit":"kW","value":0,"variable":"epsPower"},{"name":"EPS-RCurrent","unit":"A","value":0,"variable":"epsCurrentR"},{"name":"EPS-RVolt","unit":"V","value":0,"variable":"epsVoltR"},{"name":"EPS-RPower","unit":"kW","value":0,"variable":"epsPowerR"},{"name":"RCurrent","unit":"A","value":1.7,"variable":"RCurrent"},{"name":"RVolt","unit":"V","value":234.7,"variable":"RVolt"},{"name":"RFreq","unit":"Hz","value":50.09,"variable":"RFreq"},{"name":"RPower","unit":"kW","value":0.382,"variable":"RPower"},{"name":"AmbientTemperature","unit":"℃","value":38.3,"variable":"ambientTemperation"},{"name":"InvTemperation","unit":"℃","value":29.6,"variable":"invTemperation"},{"name":"ChargeTemperature","unit":"℃","value":0,"variable":"chargeTemperature"},{"name":"batTemperature","unit":"℃","value":29.7,"variable":"batTemperature"},{"name":"Load Power","unit":"kW","value":0.404,"variable":"loadsPower"},{"name":"Output Power","unit":"kW","value":0.382,"variable":"generationPower"},{"name":"Feed-in Power","unit":"kW","value":0,"variable":"feedinPower"},{"name":"GridConsumption Power","unit":"kW","value":0.044,"variable":"gridConsumptionPower"},{"name":"InvBatVolt","unit":"V","value":239.8,"variable":"invBatVolt"},{"name":"InvBatCurrent","unit":"A","value":-0.1,"variable":"invBatCurrent"},{"name":"invBatPower","unit":"kW","value":-0.047,"variable":"invBatPower"},{"name":"Charge Power","unit":"kW","value":0.047,"variable":"batChargePower"},{"name":"Discharge Power","unit":"kW","value":0,"variable":"batDischargePower"},{"name":"BatVolt","unit":"V","value":239.7,"variable":"batVolt"},{"name":"BatCurrent","unit":"A","value":0.3,"variable":"batCurrent"},{"name":"MeterPower","unit":"kW","value":0.044,"variable":"meterPower"},{"name":"Meter2Power","unit":"kW","value":0,"variable":"meterPower2"},{"name":"SoC","unit":"%","value":89,"variable":"SoC"},{"name":"Cumulative power generation","unit":"kWh","value":906.8,"variable":"generation"},{"name":"Battery Residual Energy","unit":"0.01kWh","value":956,"variable":"ResidualEnergy"},{"name":"Running State","value":"163","variable":"runningState"},{"name":"Battery Status","value":"1","variable":"batStatus"},{"name":"Battery Status Name","value":"Normal","variable":"batStatusV2"},{"name":"The current error code is reported","value":"","variable":"currentFault"},{"name":"The number of errors","value":"0","variable":"currentFaultCount"}],"deviceSN":"66BH302022PC033","time":"2024-05-24 17:29:06 BST+0100"}]}');
-        
-        //Shower on example
-        // const responseData: any | null = await JSON.parse('{"errno":0,"msg":"success","result":[{"datas":[{"name":"PVPower","unit":"kW","value":1.328,"variable":"pvPower"},{"name":"PV1Volt","unit":"V","value":232.9,"variable":"pv1Volt"},{"name":"PV1Current","unit":"A","value":5.7,"variable":"pv1Current"},{"name":"PV1Power","unit":"kW","value":1.328,"variable":"pv1Power"},{"name":"PV2Volt","unit":"V","value":6,"variable":"pv2Volt"},{"name":"PV2Current","unit":"A","value":0,"variable":"pv2Current"},{"name":"PV2Power","unit":"kW","value":0,"variable":"pv2Power"},{"name":"EPSPower","unit":"kW","value":0,"variable":"epsPower"},{"name":"EPS-RCurrent","unit":"A","value":0,"variable":"epsCurrentR"},{"name":"EPS-RVolt","unit":"V","value":0,"variable":"epsVoltR"},{"name":"EPS-RPower","unit":"kW","value":0,"variable":"epsPowerR"},{"name":"RCurrent","unit":"A","value":12.8,"variable":"RCurrent"},{"name":"RVolt","unit":"V","value":233.3,"variable":"RVolt"},{"name":"RFreq","unit":"Hz","value":50.02,"variable":"RFreq"},{"name":"RPower","unit":"kW","value":2.997,"variable":"RPower"},{"name":"AmbientTemperature","unit":"℃","value":50,"variable":"ambientTemperation"},{"name":"InvTemperation","unit":"℃","value":44.8,"variable":"invTemperation"},{"name":"ChargeTemperature","unit":"℃","value":0,"variable":"chargeTemperature"},{"name":"batTemperature","unit":"℃","value":34.3,"variable":"batTemperature"},{"name":"Load Power","unit":"kW","value":8.018,"variable":"loadsPower"},{"name":"Output Power","unit":"kW","value":2.997,"variable":"generationPower"},{"name":"Feed-in Power","unit":"kW","value":0,"variable":"feedinPower"},{"name":"GridConsumption Power","unit":"kW","value":5.012,"variable":"gridConsumptionPower"},{"name":"InvBatVolt","unit":"V","value":237.4,"variable":"invBatVolt"},{"name":"InvBatCurrent","unit":"A","value":7.3,"variable":"invBatCurrent"},{"name":"invBatPower","unit":"kW","value":1.744,"variable":"invBatPower"},{"name":"Charge Power","unit":"kW","value":0,"variable":"batChargePower"},{"name":"Discharge Power","unit":"kW","value":1.744,"variable":"batDischargePower"},{"name":"BatVolt","unit":"V","value":237.4,"variable":"batVolt"},{"name":"BatCurrent","unit":"A","value":-7.6,"variable":"batCurrent"},{"name":"MeterPower","unit":"kW","value":5.012,"variable":"meterPower"},{"name":"Meter2Power","unit":"kW","value":0,"variable":"meterPower2"},{"name":"SoC","unit":"%","value":65,"variable":"SoC"},{"name":"Cumulative power generation","unit":"kWh","value":752.5,"variable":"generation"},{"name":"Battery Residual Energy","unit":"0.01kWh","value":700,"variable":"ResidualEnergy"},{"name":"Running State","value":"163","variable":"runningState"},{"name":"Battery Status","value":"1","variable":"batStatus"},{"name":"Battery Status Name","value":"Normal","variable":"batStatusV2"},{"name":"The current error code is reported","value":"","variable":"currentFault"},{"name":"The number of errors","value":"0","variable":"currentFaultCount"}],"deviceSN":"66BH302022PC033","time":"2024-05-12 11:40:48 BST+0100"}]}');
-
-        //Battery charging example
-        // const responseData: any | null = await JSON.parse('{"errno":0,"msg":"success","result":[{"datas":[{"name":"PVPower","unit":"kW","value":2.574,"variable":"pvPower"},{"name":"PV1Volt","unit":"V","value":231.9,"variable":"pv1Volt"},{"name":"PV1Current","unit":"A","value":11.1,"variable":"pv1Current"},{"name":"PV1Power","unit":"kW","value":2.574,"variable":"pv1Power"},{"name":"PV2Volt","unit":"V","value":5.9,"variable":"pv2Volt"},{"name":"PV2Current","unit":"A","value":0,"variable":"pv2Current"},{"name":"PV2Power","unit":"kW","value":0,"variable":"pv2Power"},{"name":"EPSPower","unit":"kW","value":0,"variable":"epsPower"},{"name":"EPS-RCurrent","unit":"A","value":0,"variable":"epsCurrentR"},{"name":"EPS-RVolt","unit":"V","value":0,"variable":"epsVoltR"},{"name":"EPS-RPower","unit":"kW","value":0,"variable":"epsPowerR"},{"name":"RCurrent","unit":"A","value":3,"variable":"RCurrent"},{"name":"RVolt","unit":"V","value":239.4,"variable":"RVolt"},{"name":"RFreq","unit":"Hz","value":50.02,"variable":"RFreq"},{"name":"RPower","unit":"kW","value":0.706,"variable":"RPower"},{"name":"AmbientTemperature","unit":"℃","value":50.2,"variable":"ambientTemperation"},{"name":"InvTemperation","unit":"℃","value":42.7,"variable":"invTemperation"},{"name":"ChargeTemperature","unit":"℃","value":0,"variable":"chargeTemperature"},{"name":"batTemperature","unit":"℃","value":34.3,"variable":"batTemperature"},{"name":"Load Power","unit":"kW","value":0.729,"variable":"loadsPower"},{"name":"Output Power","unit":"kW","value":0.706,"variable":"generationPower"},{"name":"Feed-in Power","unit":"kW","value":0,"variable":"feedinPower"},{"name":"GridConsumption Power","unit":"kW","value":0.025,"variable":"gridConsumptionPower"},{"name":"InvBatVolt","unit":"V","value":242.6,"variable":"invBatVolt"},{"name":"InvBatCurrent","unit":"A","value":-7.3,"variable":"invBatCurrent"},{"name":"invBatPower","unit":"kW","value":-1.788,"variable":"invBatPower"},{"name":"Charge Power","unit":"kW","value":1.788,"variable":"batChargePower"},{"name":"Discharge Power","unit":"kW","value":0,"variable":"batDischargePower"},{"name":"BatVolt","unit":"V","value":242.3,"variable":"batVolt"},{"name":"BatCurrent","unit":"A","value":7.4,"variable":"batCurrent"},{"name":"MeterPower","unit":"kW","value":0.025,"variable":"meterPower"},{"name":"Meter2Power","unit":"kW","value":0,"variable":"meterPower2"},{"name":"SoC","unit":"%","value":66,"variable":"SoC"},{"name":"Cumulative power generation","unit":"kWh","value":752.7,"variable":"generation"},{"name":"Battery Residual Energy","unit":"0.01kWh","value":711,"variable":"ResidualEnergy"},{"name":"Running State","value":"163","variable":"runningState"},{"name":"Battery Status","value":"1","variable":"batStatus"},{"name":"Battery Status Name","value":"Normal","variable":"batStatusV2"},{"name":"The current error code is reported","value":"","variable":"currentFault"},{"name":"The number of errors","value":"0","variable":"currentFaultCount"}],"deviceSN":"66BH302022PC033","time":"2024-05-12 11:50:48 BST+0100"}]}');
-
-        //Live
-        await retrieveMinSOC();
-        const [status, responseData] = await retrieveSolarDetails(accessToken);
-
-        // let status = 200; 
-        if (status === 200) {
-            if (responseData) {
-                // console.log("responseData: " + JSON.stringify(responseData));
-
-                // Access properties only after the check
-                const socData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'SoC');
-                if (socData) { // Check if socData is found before accessing its value
-                    percentage = socData.value;
+            // let status = 200; 
+            if (status === 200) {
+                if (responseData) {
+                    return minSocValue;
                 }
-
-                time = await formatDateTime(responseData.result[0].time);
-
-                const pvPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'pvPower');
-                if (pvPowerData) {
-                    pvPowerValue = pvPowerData.value;
-                    // pvPower = String(pvPowerValue) + " " + await pvPowerData.unit;
-                    pvPower = displayValue(pvPowerData.value);
-                }
-
-                const batDischargePowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'batDischargePower');
-                if (batDischargePowerData) {
-                    batDischargePowerValue = batDischargePowerData.value;
-                    // batDisChargePower = String(batDischargePowerValue) + " " + await batDischargePowerData.unit;
-                    batDisChargePower = displayValue(batDischargePowerData.value);
-                }
-                const batChargePowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'batChargePower');
-                if (batChargePowerData) {
-                    batChargePowerValue = batChargePowerData.value;
-                    // batChargePower = String(batChargePowerValue) + " " + await batChargePowerData.unit;
-                    batChargePower = displayValue(batChargePowerData.value);
-                }
-
-                if (batChargePowerData && batDischargePowerData) {
-                    if (batDischargePowerData.value === 0 && batChargePowerData.value === 0) {
-                        chargingState = ChargingState.Nothing;
-                    } else if (batDischargePowerData.value > 0 && batChargePowerData.value === 0) {
-                        chargingState = ChargingState.Discharging;
-                    } else if (batDischargePowerData.value === 0 && batChargePowerData.value > 0) {
-                        chargingState = ChargingState.Charging;
-                    }
-                }
-
-                //Grid Consumption vs Feed-in power
-                const gridConsumptionPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'gridConsumptionPower');
-                if (gridConsumptionPowerData) {
-                    gridConsumptionPowerValue = gridConsumptionPowerData.value;
-                    // gridConsumptionPower = String(gridConsumptionPowerValue) + " " + await gridConsumptionPowerData.unit;
-                    gridConsumptionPower = displayValue(gridConsumptionPowerData.value);
-                }
-
-                const feedinPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'feedinPower');
-                if (feedinPowerData) {
-                    feedinPowerValue = feedinPowerData.value;
-                    // feedinPower = String(feedinPowerValue) + " " + await feedinPowerData.unit;
-                    feedinPower = displayValue(feedinPowerData.value);
-                }
-
-                const loadPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'loadsPower');
-                if (loadPowerData) {
-                    loadPowerValue = loadPowerData.value;
-                    // loadPower = String(loadPowerValue) + " " + await loadPowerData.unit;
-                    loadPower = displayValue(loadPowerData.value);
-                }
-
-                showSpinner = false;
-                return;
             } else {
-                console.error("Error parsing JSON response data");
+                console.error("Response: " + responseData);
             }
-        } else {
-            window.location.reload();
+        }
+        return socValue;
+    }
+
+    async function retrieveMinSOC() {
+        await authStore.subscribe((state: AuthState) => {
+            isAuthenticated = state.isAuthenticated;
+            accessToken = state.accessToken;
+            user = state.user;
+        });
+
+        // let accessToken = "dummy";
+        if (accessToken) {
+            const [status, responseData] = await retrieveMinSOCDetails(accessToken);
+
+            // let status = 200; 
+            if (status === 200) {
+                if (responseData) {
+                    // console.log("In retrieveMinSOC: " + status + " resposneData: " + JSON.stringify(responseData));
+                    socValue = responseData.result.minSoc;
+                }
+            }
+        }
+        return socValue;
+    }
+
+
+    async function retrieveValues() {
+        await authStore.subscribe((state: AuthState) => {
+            isAuthenticated = state.isAuthenticated;
+            accessToken = state.accessToken;
+            user = state.user;
+        });
+
+        // let accessToken = "dummy";
+        if (accessToken) {
+            //get the solar details
+
+            // const responseData: any | null = await JSON.parse('{"errno":0,"msg":"success","result":[{"datas":[{"name":"PVPower","unit":"kW","value":0.445,"variable":"pvPower"},{"name":"PV1Volt","unit":"V","value":221.9,"variable":"pv1Volt"},{"name":"PV1Current","unit":"A","value":2,"variable":"pv1Current"},{"name":"PV1Power","unit":"kW","value":0.444,"variable":"pv1Power"},{"name":"PV2Volt","unit":"V","value":5.8,"variable":"pv2Volt"},{"name":"PV2Current","unit":"A","value":0.1,"variable":"pv2Current"},{"name":"PV2Power","unit":"kW","value":0.001,"variable":"pv2Power"},{"name":"EPSPower","unit":"kW","value":0,"variable":"epsPower"},{"name":"EPS-RCurrent","unit":"A","value":0,"variable":"epsCurrentR"},{"name":"EPS-RVolt","unit":"V","value":0,"variable":"epsVoltR"},{"name":"EPS-RPower","unit":"kW","value":0,"variable":"epsPowerR"},{"name":"RCurrent","unit":"A","value":1.7,"variable":"RCurrent"},{"name":"RVolt","unit":"V","value":234.7,"variable":"RVolt"},{"name":"RFreq","unit":"Hz","value":50.09,"variable":"RFreq"},{"name":"RPower","unit":"kW","value":0.382,"variable":"RPower"},{"name":"AmbientTemperature","unit":"℃","value":38.3,"variable":"ambientTemperation"},{"name":"InvTemperation","unit":"℃","value":29.6,"variable":"invTemperation"},{"name":"ChargeTemperature","unit":"℃","value":0,"variable":"chargeTemperature"},{"name":"batTemperature","unit":"℃","value":29.7,"variable":"batTemperature"},{"name":"Load Power","unit":"kW","value":0.404,"variable":"loadsPower"},{"name":"Output Power","unit":"kW","value":0.382,"variable":"generationPower"},{"name":"Feed-in Power","unit":"kW","value":0,"variable":"feedinPower"},{"name":"GridConsumption Power","unit":"kW","value":0.044,"variable":"gridConsumptionPower"},{"name":"InvBatVolt","unit":"V","value":239.8,"variable":"invBatVolt"},{"name":"InvBatCurrent","unit":"A","value":-0.1,"variable":"invBatCurrent"},{"name":"invBatPower","unit":"kW","value":-0.047,"variable":"invBatPower"},{"name":"Charge Power","unit":"kW","value":0.047,"variable":"batChargePower"},{"name":"Discharge Power","unit":"kW","value":0,"variable":"batDischargePower"},{"name":"BatVolt","unit":"V","value":239.7,"variable":"batVolt"},{"name":"BatCurrent","unit":"A","value":0.3,"variable":"batCurrent"},{"name":"MeterPower","unit":"kW","value":0.044,"variable":"meterPower"},{"name":"Meter2Power","unit":"kW","value":0,"variable":"meterPower2"},{"name":"SoC","unit":"%","value":89,"variable":"SoC"},{"name":"Cumulative power generation","unit":"kWh","value":906.8,"variable":"generation"},{"name":"Battery Residual Energy","unit":"0.01kWh","value":956,"variable":"ResidualEnergy"},{"name":"Running State","value":"163","variable":"runningState"},{"name":"Battery Status","value":"1","variable":"batStatus"},{"name":"Battery Status Name","value":"Normal","variable":"batStatusV2"},{"name":"The current error code is reported","value":"","variable":"currentFault"},{"name":"The number of errors","value":"0","variable":"currentFaultCount"}],"deviceSN":"66BH302022PC033","time":"2024-05-24 17:29:06 BST+0100"}]}');
+            
+            //Shower on example
+            // const responseData: any | null = await JSON.parse('{"errno":0,"msg":"success","result":[{"datas":[{"name":"PVPower","unit":"kW","value":1.328,"variable":"pvPower"},{"name":"PV1Volt","unit":"V","value":232.9,"variable":"pv1Volt"},{"name":"PV1Current","unit":"A","value":5.7,"variable":"pv1Current"},{"name":"PV1Power","unit":"kW","value":1.328,"variable":"pv1Power"},{"name":"PV2Volt","unit":"V","value":6,"variable":"pv2Volt"},{"name":"PV2Current","unit":"A","value":0,"variable":"pv2Current"},{"name":"PV2Power","unit":"kW","value":0,"variable":"pv2Power"},{"name":"EPSPower","unit":"kW","value":0,"variable":"epsPower"},{"name":"EPS-RCurrent","unit":"A","value":0,"variable":"epsCurrentR"},{"name":"EPS-RVolt","unit":"V","value":0,"variable":"epsVoltR"},{"name":"EPS-RPower","unit":"kW","value":0,"variable":"epsPowerR"},{"name":"RCurrent","unit":"A","value":12.8,"variable":"RCurrent"},{"name":"RVolt","unit":"V","value":233.3,"variable":"RVolt"},{"name":"RFreq","unit":"Hz","value":50.02,"variable":"RFreq"},{"name":"RPower","unit":"kW","value":2.997,"variable":"RPower"},{"name":"AmbientTemperature","unit":"℃","value":50,"variable":"ambientTemperation"},{"name":"InvTemperation","unit":"℃","value":44.8,"variable":"invTemperation"},{"name":"ChargeTemperature","unit":"℃","value":0,"variable":"chargeTemperature"},{"name":"batTemperature","unit":"℃","value":34.3,"variable":"batTemperature"},{"name":"Load Power","unit":"kW","value":8.018,"variable":"loadsPower"},{"name":"Output Power","unit":"kW","value":2.997,"variable":"generationPower"},{"name":"Feed-in Power","unit":"kW","value":0,"variable":"feedinPower"},{"name":"GridConsumption Power","unit":"kW","value":5.012,"variable":"gridConsumptionPower"},{"name":"InvBatVolt","unit":"V","value":237.4,"variable":"invBatVolt"},{"name":"InvBatCurrent","unit":"A","value":7.3,"variable":"invBatCurrent"},{"name":"invBatPower","unit":"kW","value":1.744,"variable":"invBatPower"},{"name":"Charge Power","unit":"kW","value":0,"variable":"batChargePower"},{"name":"Discharge Power","unit":"kW","value":1.744,"variable":"batDischargePower"},{"name":"BatVolt","unit":"V","value":237.4,"variable":"batVolt"},{"name":"BatCurrent","unit":"A","value":-7.6,"variable":"batCurrent"},{"name":"MeterPower","unit":"kW","value":5.012,"variable":"meterPower"},{"name":"Meter2Power","unit":"kW","value":0,"variable":"meterPower2"},{"name":"SoC","unit":"%","value":65,"variable":"SoC"},{"name":"Cumulative power generation","unit":"kWh","value":752.5,"variable":"generation"},{"name":"Battery Residual Energy","unit":"0.01kWh","value":700,"variable":"ResidualEnergy"},{"name":"Running State","value":"163","variable":"runningState"},{"name":"Battery Status","value":"1","variable":"batStatus"},{"name":"Battery Status Name","value":"Normal","variable":"batStatusV2"},{"name":"The current error code is reported","value":"","variable":"currentFault"},{"name":"The number of errors","value":"0","variable":"currentFaultCount"}],"deviceSN":"66BH302022PC033","time":"2024-05-12 11:40:48 BST+0100"}]}');
+
+            //Battery charging example
+            // const responseData: any | null = await JSON.parse('{"errno":0,"msg":"success","result":[{"datas":[{"name":"PVPower","unit":"kW","value":2.574,"variable":"pvPower"},{"name":"PV1Volt","unit":"V","value":231.9,"variable":"pv1Volt"},{"name":"PV1Current","unit":"A","value":11.1,"variable":"pv1Current"},{"name":"PV1Power","unit":"kW","value":2.574,"variable":"pv1Power"},{"name":"PV2Volt","unit":"V","value":5.9,"variable":"pv2Volt"},{"name":"PV2Current","unit":"A","value":0,"variable":"pv2Current"},{"name":"PV2Power","unit":"kW","value":0,"variable":"pv2Power"},{"name":"EPSPower","unit":"kW","value":0,"variable":"epsPower"},{"name":"EPS-RCurrent","unit":"A","value":0,"variable":"epsCurrentR"},{"name":"EPS-RVolt","unit":"V","value":0,"variable":"epsVoltR"},{"name":"EPS-RPower","unit":"kW","value":0,"variable":"epsPowerR"},{"name":"RCurrent","unit":"A","value":3,"variable":"RCurrent"},{"name":"RVolt","unit":"V","value":239.4,"variable":"RVolt"},{"name":"RFreq","unit":"Hz","value":50.02,"variable":"RFreq"},{"name":"RPower","unit":"kW","value":0.706,"variable":"RPower"},{"name":"AmbientTemperature","unit":"℃","value":50.2,"variable":"ambientTemperation"},{"name":"InvTemperation","unit":"℃","value":42.7,"variable":"invTemperation"},{"name":"ChargeTemperature","unit":"℃","value":0,"variable":"chargeTemperature"},{"name":"batTemperature","unit":"℃","value":34.3,"variable":"batTemperature"},{"name":"Load Power","unit":"kW","value":0.729,"variable":"loadsPower"},{"name":"Output Power","unit":"kW","value":0.706,"variable":"generationPower"},{"name":"Feed-in Power","unit":"kW","value":0,"variable":"feedinPower"},{"name":"GridConsumption Power","unit":"kW","value":0.025,"variable":"gridConsumptionPower"},{"name":"InvBatVolt","unit":"V","value":242.6,"variable":"invBatVolt"},{"name":"InvBatCurrent","unit":"A","value":-7.3,"variable":"invBatCurrent"},{"name":"invBatPower","unit":"kW","value":-1.788,"variable":"invBatPower"},{"name":"Charge Power","unit":"kW","value":1.788,"variable":"batChargePower"},{"name":"Discharge Power","unit":"kW","value":0,"variable":"batDischargePower"},{"name":"BatVolt","unit":"V","value":242.3,"variable":"batVolt"},{"name":"BatCurrent","unit":"A","value":7.4,"variable":"batCurrent"},{"name":"MeterPower","unit":"kW","value":0.025,"variable":"meterPower"},{"name":"Meter2Power","unit":"kW","value":0,"variable":"meterPower2"},{"name":"SoC","unit":"%","value":66,"variable":"SoC"},{"name":"Cumulative power generation","unit":"kWh","value":752.7,"variable":"generation"},{"name":"Battery Residual Energy","unit":"0.01kWh","value":711,"variable":"ResidualEnergy"},{"name":"Running State","value":"163","variable":"runningState"},{"name":"Battery Status","value":"1","variable":"batStatus"},{"name":"Battery Status Name","value":"Normal","variable":"batStatusV2"},{"name":"The current error code is reported","value":"","variable":"currentFault"},{"name":"The number of errors","value":"0","variable":"currentFaultCount"}],"deviceSN":"66BH302022PC033","time":"2024-05-12 11:50:48 BST+0100"}]}');
+
+            // socValue = 55;
+            //Live
+            await retrieveMinSOC();
+            const [status, responseData] = await retrieveSolarDetails(accessToken);
+
+            // let status = 200; 
+            if (status === 200) {
+                if (responseData) {
+
+                    // Access properties only after the check
+                    const socData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'SoC');
+                    if (socData) { // Check if socData is found before accessing its value
+                        percentage = socData.value;
+                    }
+
+                    time = await formatDateTime(responseData.result[0].time);
+
+                    const pvPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'pvPower');
+                    if (pvPowerData) {
+                        pvPowerValue = pvPowerData.value;
+                        pvPower = displayValue(pvPowerData.value);
+                    }
+
+                    const batDischargePowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'batDischargePower');
+                    if (batDischargePowerData) {
+                        batDischargePowerValue = batDischargePowerData.value;
+                        batDisChargePower = displayValue(batDischargePowerData.value);
+                    }
+                    const batChargePowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'batChargePower');
+                    if (batChargePowerData) {
+                        batChargePowerValue = batChargePowerData.value;
+                        batChargePower = displayValue(batChargePowerData.value);
+                    }
+
+                    if (batChargePowerData && batDischargePowerData) {
+                        if (batDischargePowerData.value === 0 && batChargePowerData.value === 0) {
+                            chargingState = ChargingState.Nothing;
+                        } else if (batDischargePowerData.value > 0 && batChargePowerData.value === 0) {
+                            chargingState = ChargingState.Discharging;
+                        } else if (batDischargePowerData.value === 0 && batChargePowerData.value > 0) {
+                            chargingState = ChargingState.Charging;
+                        }
+                    }
+
+                    //Grid Consumption vs Feed-in power
+                    const gridConsumptionPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'gridConsumptionPower');
+                    if (gridConsumptionPowerData) {
+                        gridConsumptionPowerValue = gridConsumptionPowerData.value;
+                        // gridConsumptionPower = String(gridConsumptionPowerValue) + " " + await gridConsumptionPowerData.unit;
+                        gridConsumptionPower = displayValue(gridConsumptionPowerData.value);
+                    }
+
+                    const feedinPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'feedinPower');
+                    if (feedinPowerData) {
+                        feedinPowerValue = feedinPowerData.value;
+                        // feedinPower = String(feedinPowerValue) + " " + await feedinPowerData.unit;
+                        feedinPower = displayValue(feedinPowerData.value);
+                    }
+
+                    const loadPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'loadsPower');
+                    if (loadPowerData) {
+                        loadPowerValue = loadPowerData.value;
+                        // loadPower = String(loadPowerValue) + " " + await loadPowerData.unit;
+                        loadPower = displayValue(loadPowerData.value);
+                    }
+
+                    showSpinner = false;
+                    return;
+                } else {
+                    console.error("Error parsing JSON response data");
+                }
+            } else {
+                window.location.reload();
+            }
         }
     }
-}
 
-const displayValue = (value: number) => {
-    let returnString: string = "";
-    if (value >= 0.01) {
-        returnString = String(value.toFixed(2)) + " kWh";
-    } else {
-        value = value * 1000;
-        returnString = value + " w";
+    const displayValue = (value: number) => {
+        let returnString: string = "";
+        if (value >= 0.01) {
+            returnString = String(value.toFixed(2)) + " kWh";
+        } else {
+            value = value * 1000;
+            returnString = value + " w";
+        }
+
+        return returnString;
     }
 
-    return returnString;
-}
+    function changeSOC(): any {
+        showSOCModal = true;
+
+    }
+
+    async function handleSOCChange(event: string) {
+        const minSocValue = Number(event);
+        if (minSocValue > 0 && minSocValue < 100) {
+            socValue = await setMinSOC(minSocValue);
+            showSOCModal = false;
+        } else {
+            showSOCModal = true; 
+        }
+    }
 </script>
 
 <div class="grid">
@@ -284,7 +319,9 @@ const displayValue = (value: number) => {
         </div>
     </div>
     <div class="flex justify-left items-center">
-        <div class="text-center text-xs font-semibold">Min SOC: {minSOCDisplay}</div>
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div class="text-center text-xs font-semibold"><span class="underline cursor-pointer text-blue-500 hover:decoration-blue-500" on:click|preventDefault={() => changeSOC()}>Min SOC:</span> {socValue}%</div>
     </div>
 </div>   
 <div class="flex justify-center items-center">
@@ -308,4 +345,11 @@ const displayValue = (value: number) => {
         </center>
     </div>
 </div>
+{#if showSOCModal}
+  <SOCModal bind:showSOCModal socValue={socValue} onConfirm={handleSOCChange}> 
+    <h2 slot="header">
+      <p class="mb-4 font-bold text-center dgs-red">Enter Min SOC</p>
+    </h2>
+  </SOCModal>
+{/if}
 
