@@ -28,6 +28,7 @@
     let showSpinner: boolean = true;
     let showSOCModal: boolean = false;
     let socValue: number = 0;
+    let wakeLock: WakeLockSentinel | null = null;
 
     $: time;
     $: pvPower;
@@ -114,9 +115,16 @@
             // const responseData: any | null = await JSON.parse('{"errno":0,"msg":"success","result":[{"datas":[{"name":"PVPower","unit":"kW","value":2.574,"variable":"pvPower"},{"name":"PV1Volt","unit":"V","value":231.9,"variable":"pv1Volt"},{"name":"PV1Current","unit":"A","value":11.1,"variable":"pv1Current"},{"name":"PV1Power","unit":"kW","value":2.574,"variable":"pv1Power"},{"name":"PV2Volt","unit":"V","value":5.9,"variable":"pv2Volt"},{"name":"PV2Current","unit":"A","value":0,"variable":"pv2Current"},{"name":"PV2Power","unit":"kW","value":0,"variable":"pv2Power"},{"name":"EPSPower","unit":"kW","value":0,"variable":"epsPower"},{"name":"EPS-RCurrent","unit":"A","value":0,"variable":"epsCurrentR"},{"name":"EPS-RVolt","unit":"V","value":0,"variable":"epsVoltR"},{"name":"EPS-RPower","unit":"kW","value":0,"variable":"epsPowerR"},{"name":"RCurrent","unit":"A","value":3,"variable":"RCurrent"},{"name":"RVolt","unit":"V","value":239.4,"variable":"RVolt"},{"name":"RFreq","unit":"Hz","value":50.02,"variable":"RFreq"},{"name":"RPower","unit":"kW","value":0.706,"variable":"RPower"},{"name":"AmbientTemperature","unit":"℃","value":50.2,"variable":"ambientTemperation"},{"name":"InvTemperation","unit":"℃","value":42.7,"variable":"invTemperation"},{"name":"ChargeTemperature","unit":"℃","value":0,"variable":"chargeTemperature"},{"name":"batTemperature","unit":"℃","value":34.3,"variable":"batTemperature"},{"name":"Load Power","unit":"kW","value":0.729,"variable":"loadsPower"},{"name":"Output Power","unit":"kW","value":0.706,"variable":"generationPower"},{"name":"Feed-in Power","unit":"kW","value":0,"variable":"feedinPower"},{"name":"GridConsumption Power","unit":"kW","value":0.025,"variable":"gridConsumptionPower"},{"name":"InvBatVolt","unit":"V","value":242.6,"variable":"invBatVolt"},{"name":"InvBatCurrent","unit":"A","value":-7.3,"variable":"invBatCurrent"},{"name":"invBatPower","unit":"kW","value":-1.788,"variable":"invBatPower"},{"name":"Charge Power","unit":"kW","value":1.788,"variable":"batChargePower"},{"name":"Discharge Power","unit":"kW","value":0,"variable":"batDischargePower"},{"name":"BatVolt","unit":"V","value":242.3,"variable":"batVolt"},{"name":"BatCurrent","unit":"A","value":7.4,"variable":"batCurrent"},{"name":"MeterPower","unit":"kW","value":0.025,"variable":"meterPower"},{"name":"Meter2Power","unit":"kW","value":0,"variable":"meterPower2"},{"name":"SoC","unit":"%","value":66,"variable":"SoC"},{"name":"Cumulative power generation","unit":"kWh","value":752.7,"variable":"generation"},{"name":"Battery Residual Energy","unit":"0.01kWh","value":711,"variable":"ResidualEnergy"},{"name":"Running State","value":"163","variable":"runningState"},{"name":"Battery Status","value":"1","variable":"batStatus"},{"name":"Battery Status Name","value":"Normal","variable":"batStatusV2"},{"name":"The current error code is reported","value":"","variable":"currentFault"},{"name":"The number of errors","value":"0","variable":"currentFaultCount"}],"deviceSN":"66BH302022PC033","time":"2024-05-12 11:50:48 BST+0100"}]}');
 
             // socValue = 55;
+
+            //Stop screen from going bklank while calls being made
+            await requestWakeLock();
+
             //Live
             await retrieveMinSOC();
             const [status, responseData] = await retrieveSolarDetails(accessToken);
+
+            //Turn off the wakelock setting so the screen can dim once ready
+            await releaseWakeLock();
 
             // let status = 200; 
             if (status === 200) {
@@ -214,6 +222,27 @@
             showSOCModal = false;
         } else {
             showSOCModal = true; 
+        }
+    }
+
+    //Function used for keeping the screen alive while the web service calls are being made
+    async function requestWakeLock() {
+        try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        // console.log('Wake Lock is active');
+        } catch (err) {
+            console.error(`Failed to request Wake Lock: ${err}`);
+        }
+    }
+
+    function releaseWakeLock() {
+        if (wakeLock) {
+            wakeLock.release()
+            .then(() => {
+                // console.log('Wake Lock released');
+                wakeLock = null;
+                })
+            .catch((err) => console.error(`Failed to release Wake Lock: ${err}`));
         }
     }
 </script>
