@@ -22,6 +22,11 @@
 		}
 		return;
 	}
+
+	function handleFocus(event: FocusEvent) {
+		const input = event.target as HTMLInputElement;
+		input.select();
+	}	
 </script>
   
 <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-noninteractive-element-interactions -->
@@ -42,6 +47,7 @@
 				bind:value={socValue}
 				min="0"
 				max="100"
+				on:focus={handleFocus}
 			/>
 		</div>
 		<div class="button-group">
