@@ -23,11 +23,13 @@
 {:else}
   <Sidebar bind:open /> 
   <Navbar bind:sidebar={open} />
-  <div class="px-2 pt-12 pb-24">
-    <div class="min-h-screen flex justify-center p-5 bg-gray-100">
-      <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+  <div class="flex flex-col h-screen">
+    <div class="flex-grow flex items-center justify-center p-5 bg-gray-100">
+      <div class="bg-white pt-2 pb-2 pl-4 pr-4 rounded-lg shadow-md w-full max-w-md">
         <h1 class="main-title">Sherlock Solar</h1>
-        <slot class="overflow-x"/>
+        <div class="overflow-y-auto ">
+          <slot class="overflow-x"/>
+        </div>
       </div>
     </div>
   </div>

@@ -122,7 +122,7 @@
             //Live
             const [status, responseData] = await retrieveSolarDetails(accessToken);
             await retrieveMinSOC();
-
+            
             //Turn off the wakelock setting so the screen can dim once ready
             await releaseWakeLock();
 

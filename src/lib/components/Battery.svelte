@@ -29,7 +29,7 @@
   </script>
 
   <div class="flex items-center">
-    <div class="h-32 w-20 flex flex-col justify-end pt-1 p-3">
+    <div class="h-28 w-20 flex flex-col justify-end pt-1 p-3">
       {#each batteryColor as color}
         <div class={`${color} h-full `} />
       {/each}
