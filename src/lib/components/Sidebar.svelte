@@ -23,8 +23,8 @@
     <X />
   </button>
   <nav class="pt-2 pl-4 pb-2 text-xl">
+    <!-- TODO: Make this call the functions rather than do full refresh-->
     <a class="block" href="/main" on:click={() => (open = false)}>Home</a>
-    <!-- <a class="block" href="/resetPassword" on:click={() => (open = false)}>Reset Password</a> -->
     <hr class="border-1 border-gray-500" />
     <!-- svelte-ignore a11y-invalid-attribute -->
     <a href="" on:click={() => {handleSignOut()}}>Sign Out</a>

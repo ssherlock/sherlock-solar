@@ -1,11 +1,12 @@
 <script lang="ts">
     import Battery from '$lib/components/Battery.svelte';
     import authStore, { type AuthState } from '../../stores/authStore';
-    import { ChargingState, formatDateTime, retrieveMinSOCDetails, retrieveSolarDetails, setMinSOCDetails } from '../../solar-utils';
+    import { ChargingState, formatDateTime, retrieveBatteryChargeDetails, retrieveMinSOCDetails, retrieveSolarDetails, setBatteryChargeDetails, setMinSOCDetails } from '../../solar-utils';
 	import Line from '$lib/components/Line.svelte';
 	import { RefreshCcw } from 'lucide-svelte';
 	import { SyncLoader } from 'svelte-loading-spinners';
 	import SOCModal from '$lib/components/SOCModal.svelte';
+	import BatteryChargeModal from '$lib/components/BatteryChargeModal.svelte';
 
     let percentage: number = 0;
     let time: string = '';
@@ -27,7 +28,13 @@
     let user: any | null = null;
     let showSpinner: boolean = true;
     let showSOCModal: boolean = false;
+    let showBatteryChargeModal: boolean = false;
     let socValue: number = 0;
+    let forceChargeEnabled: boolean = false;
+    let st_hours: number = 0;
+    let st_minutes: number = 0;
+    let et_hours: number = 0;
+    let et_minutes: number = 0;
     let wakeLock: WakeLockSentinel | null = null;
 
     $: time;
@@ -35,18 +42,57 @@
     $: percentage;
     $: showSOCModal;
     $: socValue;
+    $: forceChargeEnabled;
 
     interface Data {
-    name: string;
-    unit: string;
-    value: number | string;
-    variable: string;
+        name: string;
+        unit: string;
+        value: number | string;
+        variable: string;
     }
 
     interface Result {
-    datas: Data[];
-    deviceSN: string;
-    time: string;
+        datas: Data[];
+        deviceSN: string;
+        time: string;
+    }
+
+    interface BatteryChargeTimes {
+        errno: number;
+        msg: string;
+        result: {
+            enable1: boolean;
+            enable2: boolean;
+            startTime1: { hour: number; minute: number };
+            endTime1: { hour: number; minute: number };
+            startTime2: { hour: number; minute: number };
+            endTime2: { hour: number; minute: number };
+        };
+    }
+
+    async function setBatteryChargeTime(forceChargeEnabled: boolean, st_hours: number, st_minutes: number, et_hours: number, et_minutes: number) {
+        await authStore.subscribe((state: AuthState) => {
+            isAuthenticated = state.isAuthenticated;
+            accessToken = state.accessToken;
+            user = state.user;
+        });
+
+        let status, responseData;
+
+        // let accessToken = "dummy";
+        if (accessToken) {
+            [status, responseData] = await setBatteryChargeDetails(accessToken, forceChargeEnabled, st_hours, st_minutes, et_hours, et_minutes);
+
+            // let status = 200; 
+            if (status === 200) {
+                if (responseData) {
+                    return responseData;
+                }
+            } else {
+                console.error("Response: " + responseData);
+            }
+        }
+        return responseData;
     }
 
     async function setMinSOC(minSocValue: number) {
@@ -94,6 +140,36 @@
         return socValue;
     }
 
+    async function retrieveBatteryChargeTimes() {
+        await authStore.subscribe((state: AuthState) => {
+            isAuthenticated = state.isAuthenticated;
+            accessToken = state.accessToken;
+            user = state.user;
+        });
+
+        if (accessToken) {
+            const [status, responseData] = await retrieveBatteryChargeDetails(accessToken);
+
+            if (status === 200) {
+                if (responseData) {
+                    console.log("In retrieveBatteryChargeTimes: " + status + " resposneData: " + JSON.stringify(responseData));
+                    
+                    const batteryChargeTimes: BatteryChargeTimes = responseData as unknown as BatteryChargeTimes;
+
+                    forceChargeEnabled = batteryChargeTimes.result.enable1;
+
+                    const startTime1 = batteryChargeTimes.result.startTime1;
+                    st_hours = startTime1.hour;
+                    st_minutes = startTime1.minute;
+
+                    const endTime1 = batteryChargeTimes.result.endTime1;
+                    et_hours = endTime1.hour;
+                    et_minutes = endTime1.minute;
+                    // console.log("forceChargeEnabled: " + forceChargeEnabled + " st_hours: " + await st_hours + " st_minutes: " + await st_minutes + " et_hours: " + await et_hours + " et_minutes: " + await et_minutes);
+                }
+            }
+        }
+    }
 
     async function retrieveValues() {
         await authStore.subscribe((state: AuthState) => {
@@ -112,21 +188,23 @@
             // const responseData: any | null = await JSON.parse('{"errno":0,"msg":"success","result":[{"datas":[{"name":"PVPower","unit":"kW","value":1.328,"variable":"pvPower"},{"name":"PV1Volt","unit":"V","value":232.9,"variable":"pv1Volt"},{"name":"PV1Current","unit":"A","value":5.7,"variable":"pv1Current"},{"name":"PV1Power","unit":"kW","value":1.328,"variable":"pv1Power"},{"name":"PV2Volt","unit":"V","value":6,"variable":"pv2Volt"},{"name":"PV2Current","unit":"A","value":0,"variable":"pv2Current"},{"name":"PV2Power","unit":"kW","value":0,"variable":"pv2Power"},{"name":"EPSPower","unit":"kW","value":0,"variable":"epsPower"},{"name":"EPS-RCurrent","unit":"A","value":0,"variable":"epsCurrentR"},{"name":"EPS-RVolt","unit":"V","value":0,"variable":"epsVoltR"},{"name":"EPS-RPower","unit":"kW","value":0,"variable":"epsPowerR"},{"name":"RCurrent","unit":"A","value":12.8,"variable":"RCurrent"},{"name":"RVolt","unit":"V","value":233.3,"variable":"RVolt"},{"name":"RFreq","unit":"Hz","value":50.02,"variable":"RFreq"},{"name":"RPower","unit":"kW","value":2.997,"variable":"RPower"},{"name":"AmbientTemperature","unit":"℃","value":50,"variable":"ambientTemperation"},{"name":"InvTemperation","unit":"℃","value":44.8,"variable":"invTemperation"},{"name":"ChargeTemperature","unit":"℃","value":0,"variable":"chargeTemperature"},{"name":"batTemperature","unit":"℃","value":34.3,"variable":"batTemperature"},{"name":"Load Power","unit":"kW","value":8.018,"variable":"loadsPower"},{"name":"Output Power","unit":"kW","value":2.997,"variable":"generationPower"},{"name":"Feed-in Power","unit":"kW","value":0,"variable":"feedinPower"},{"name":"GridConsumption Power","unit":"kW","value":5.012,"variable":"gridConsumptionPower"},{"name":"InvBatVolt","unit":"V","value":237.4,"variable":"invBatVolt"},{"name":"InvBatCurrent","unit":"A","value":7.3,"variable":"invBatCurrent"},{"name":"invBatPower","unit":"kW","value":1.744,"variable":"invBatPower"},{"name":"Charge Power","unit":"kW","value":0,"variable":"batChargePower"},{"name":"Discharge Power","unit":"kW","value":1.744,"variable":"batDischargePower"},{"name":"BatVolt","unit":"V","value":237.4,"variable":"batVolt"},{"name":"BatCurrent","unit":"A","value":-7.6,"variable":"batCurrent"},{"name":"MeterPower","unit":"kW","value":5.012,"variable":"meterPower"},{"name":"Meter2Power","unit":"kW","value":0,"variable":"meterPower2"},{"name":"SoC","unit":"%","value":65,"variable":"SoC"},{"name":"Cumulative power generation","unit":"kWh","value":752.5,"variable":"generation"},{"name":"Battery Residual Energy","unit":"0.01kWh","value":700,"variable":"ResidualEnergy"},{"name":"Running State","value":"163","variable":"runningState"},{"name":"Battery Status","value":"1","variable":"batStatus"},{"name":"Battery Status Name","value":"Normal","variable":"batStatusV2"},{"name":"The current error code is reported","value":"","variable":"currentFault"},{"name":"The number of errors","value":"0","variable":"currentFaultCount"}],"deviceSN":"66BH302022PC033","time":"2024-05-12 11:40:48 BST+0100"}]}');
 
             //Battery charging example
-            // const responseData: any | null = await JSON.parse('{"errno":0,"msg":"success","result":[{"datas":[{"name":"PVPower","unit":"kW","value":2.574,"variable":"pvPower"},{"name":"PV1Volt","unit":"V","value":231.9,"variable":"pv1Volt"},{"name":"PV1Current","unit":"A","value":11.1,"variable":"pv1Current"},{"name":"PV1Power","unit":"kW","value":2.574,"variable":"pv1Power"},{"name":"PV2Volt","unit":"V","value":5.9,"variable":"pv2Volt"},{"name":"PV2Current","unit":"A","value":0,"variable":"pv2Current"},{"name":"PV2Power","unit":"kW","value":0,"variable":"pv2Power"},{"name":"EPSPower","unit":"kW","value":0,"variable":"epsPower"},{"name":"EPS-RCurrent","unit":"A","value":0,"variable":"epsCurrentR"},{"name":"EPS-RVolt","unit":"V","value":0,"variable":"epsVoltR"},{"name":"EPS-RPower","unit":"kW","value":0,"variable":"epsPowerR"},{"name":"RCurrent","unit":"A","value":3,"variable":"RCurrent"},{"name":"RVolt","unit":"V","value":239.4,"variable":"RVolt"},{"name":"RFreq","unit":"Hz","value":50.02,"variable":"RFreq"},{"name":"RPower","unit":"kW","value":0.706,"variable":"RPower"},{"name":"AmbientTemperature","unit":"℃","value":50.2,"variable":"ambientTemperation"},{"name":"InvTemperation","unit":"℃","value":42.7,"variable":"invTemperation"},{"name":"ChargeTemperature","unit":"℃","value":0,"variable":"chargeTemperature"},{"name":"batTemperature","unit":"℃","value":34.3,"variable":"batTemperature"},{"name":"Load Power","unit":"kW","value":0.729,"variable":"loadsPower"},{"name":"Output Power","unit":"kW","value":0.706,"variable":"generationPower"},{"name":"Feed-in Power","unit":"kW","value":0,"variable":"feedinPower"},{"name":"GridConsumption Power","unit":"kW","value":0.025,"variable":"gridConsumptionPower"},{"name":"InvBatVolt","unit":"V","value":242.6,"variable":"invBatVolt"},{"name":"InvBatCurrent","unit":"A","value":-7.3,"variable":"invBatCurrent"},{"name":"invBatPower","unit":"kW","value":-1.788,"variable":"invBatPower"},{"name":"Charge Power","unit":"kW","value":1.788,"variable":"batChargePower"},{"name":"Discharge Power","unit":"kW","value":0,"variable":"batDischargePower"},{"name":"BatVolt","unit":"V","value":242.3,"variable":"batVolt"},{"name":"BatCurrent","unit":"A","value":7.4,"variable":"batCurrent"},{"name":"MeterPower","unit":"kW","value":0.025,"variable":"meterPower"},{"name":"Meter2Power","unit":"kW","value":0,"variable":"meterPower2"},{"name":"SoC","unit":"%","value":66,"variable":"SoC"},{"name":"Cumulative power generation","unit":"kWh","value":752.7,"variable":"generation"},{"name":"Battery Residual Energy","unit":"0.01kWh","value":711,"variable":"ResidualEnergy"},{"name":"Running State","value":"163","variable":"runningState"},{"name":"Battery Status","value":"1","variable":"batStatus"},{"name":"Battery Status Name","value":"Normal","variable":"batStatusV2"},{"name":"The current error code is reported","value":"","variable":"currentFault"},{"name":"The number of errors","value":"0","variable":"currentFaultCount"}],"deviceSN":"66BH302022PC033","time":"2024-05-12 11:50:48 BST+0100"}]}');
+            const responseData: any | null = await JSON.parse('{"errno":0,"msg":"success","result":[{"datas":[{"name":"PVPower","unit":"kW","value":2.574,"variable":"pvPower"},{"name":"PV1Volt","unit":"V","value":231.9,"variable":"pv1Volt"},{"name":"PV1Current","unit":"A","value":11.1,"variable":"pv1Current"},{"name":"PV1Power","unit":"kW","value":2.574,"variable":"pv1Power"},{"name":"PV2Volt","unit":"V","value":5.9,"variable":"pv2Volt"},{"name":"PV2Current","unit":"A","value":0,"variable":"pv2Current"},{"name":"PV2Power","unit":"kW","value":0,"variable":"pv2Power"},{"name":"EPSPower","unit":"kW","value":0,"variable":"epsPower"},{"name":"EPS-RCurrent","unit":"A","value":0,"variable":"epsCurrentR"},{"name":"EPS-RVolt","unit":"V","value":0,"variable":"epsVoltR"},{"name":"EPS-RPower","unit":"kW","value":0,"variable":"epsPowerR"},{"name":"RCurrent","unit":"A","value":3,"variable":"RCurrent"},{"name":"RVolt","unit":"V","value":239.4,"variable":"RVolt"},{"name":"RFreq","unit":"Hz","value":50.02,"variable":"RFreq"},{"name":"RPower","unit":"kW","value":0.706,"variable":"RPower"},{"name":"AmbientTemperature","unit":"℃","value":50.2,"variable":"ambientTemperation"},{"name":"InvTemperation","unit":"℃","value":42.7,"variable":"invTemperation"},{"name":"ChargeTemperature","unit":"℃","value":0,"variable":"chargeTemperature"},{"name":"batTemperature","unit":"℃","value":34.3,"variable":"batTemperature"},{"name":"Load Power","unit":"kW","value":0.729,"variable":"loadsPower"},{"name":"Output Power","unit":"kW","value":0.706,"variable":"generationPower"},{"name":"Feed-in Power","unit":"kW","value":0,"variable":"feedinPower"},{"name":"GridConsumption Power","unit":"kW","value":0.025,"variable":"gridConsumptionPower"},{"name":"InvBatVolt","unit":"V","value":242.6,"variable":"invBatVolt"},{"name":"InvBatCurrent","unit":"A","value":-7.3,"variable":"invBatCurrent"},{"name":"invBatPower","unit":"kW","value":-1.788,"variable":"invBatPower"},{"name":"Charge Power","unit":"kW","value":1.788,"variable":"batChargePower"},{"name":"Discharge Power","unit":"kW","value":0,"variable":"batDischargePower"},{"name":"BatVolt","unit":"V","value":242.3,"variable":"batVolt"},{"name":"BatCurrent","unit":"A","value":7.4,"variable":"batCurrent"},{"name":"MeterPower","unit":"kW","value":0.025,"variable":"meterPower"},{"name":"Meter2Power","unit":"kW","value":0,"variable":"meterPower2"},{"name":"SoC","unit":"%","value":66,"variable":"SoC"},{"name":"Cumulative power generation","unit":"kWh","value":752.7,"variable":"generation"},{"name":"Battery Residual Energy","unit":"0.01kWh","value":711,"variable":"ResidualEnergy"},{"name":"Running State","value":"163","variable":"runningState"},{"name":"Battery Status","value":"1","variable":"batStatus"},{"name":"Battery Status Name","value":"Normal","variable":"batStatusV2"},{"name":"The current error code is reported","value":"","variable":"currentFault"},{"name":"The number of errors","value":"0","variable":"currentFaultCount"}],"deviceSN":"66BH302022PC033","time":"2024-05-12 11:50:48 BST+0100"}]}');
 
-            // socValue = 55;
+            socValue = 55;
 
             //Stop screen from going bklank while calls being made
             await requestWakeLock();
 
             //Live
-            const [status, responseData] = await retrieveSolarDetails(accessToken);
-            await retrieveMinSOC();
+            // const [status, responseData] = await retrieveSolarDetails(accessToken);
+            // await retrieveMinSOC();
+         
+            await retrieveBatteryChargeTimes();
             
             //Turn off the wakelock setting so the screen can dim once ready
             await releaseWakeLock();
 
-            // let status = 200; 
+            let status = 200; 
             if (status === 200) {
                 if (responseData) {
 
@@ -212,7 +290,10 @@
 
     function changeSOC(): any {
         showSOCModal = true;
+    }
 
+    function changeBatteryChargeTime(): any {
+        showBatteryChargeModal = true;
     }
 
     async function handleSOCChange(event: string) {
@@ -223,6 +304,22 @@
         } else {
             showSOCModal = true; 
         }
+    }
+
+    async function handleBatteryChargeTimeChange(
+        forceChargeEnabled: boolean,
+        st_hours: number,
+        st_minutes: number,
+        et_hours: number,
+        et_minutes: number) {       
+        // console.log(forceChargeEnabled + " " + st_hours + " " + st_minutes + " " + et_hours + " " + et_minutes);
+        if (st_hours < 24 && st_minutes < 60 && et_hours < 24 && et_minutes < 60) {
+            await setBatteryChargeTime(forceChargeEnabled, st_hours, st_minutes, et_hours, et_minutes);
+            await retrieveBatteryChargeTimes();
+            showBatteryChargeModal = false;
+        } else {
+            showBatteryChargeModal = true;
+        }   
     }
 
     //Function used for keeping the screen alive while the web service calls are being made
@@ -329,8 +426,12 @@
             {loadPower}
           {/if}
         </div>
-      </div>
-    <div class=""></div>
+    </div>
+    <div class="flex justify-left items-center">
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div class="text-center text-xs font-semibold"><span class="underline cursor-pointer text-blue-500 hover:decoration-blue-500" on:click|preventDefault={() => changeBatteryChargeTime()}>Force Charge:</span> {forceChargeEnabled}</div>
+    </div>
     <div>
         <div class="text-center text-xs font-semibold mt-2">
             {#if chargingState === ChargingState.Charging}
@@ -350,7 +451,7 @@
     <div class="flex justify-left items-center">
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <div class="text-center text-xs font-semibold"><span class="underline cursor-pointer text-blue-500 hover:decoration-blue-500" on:click|preventDefault={() => changeSOC()}>Min SOC:</span> {socValue}%</div>
+        <div class="text-center text-xs font-semibold"><span class="underline cursor-pointer text-blue-500 hover:decoration-blue-500" on:click|preventDefault={() => changeSOC()}>Min SOC: </span> {socValue}%</div>
     </div>
 </div>   
 <div class="flex justify-center items-center">
@@ -380,5 +481,12 @@
       <p class="mb-4 font-bold text-center dgs-red">Enter Min SOC</p>
     </h2>
   </SOCModal>
+{/if}
+{#if showBatteryChargeModal}
+  <BatteryChargeModal bind:showBatteryChargeModal forceChargeEnabled={forceChargeEnabled} st_hours={st_hours} st_minutes={st_minutes} et_hours={et_hours} et_minutes={et_minutes} onConfirm={handleBatteryChargeTimeChange}> 
+    <h2 slot="header">
+      <p class="mb-4 font-bold text-center dgs-red">Enter Battery Charge Times</p>
+    </h2>
+  </BatteryChargeModal>
 {/if}
 

@@ -119,6 +119,67 @@ export async function retrieveMinSOCDetails(accessToken: string): Promise<[numbe
     }
 }
 
+export async function setBatteryChargeDetails(accessToken: string, forceChargeEnabled: boolean, st_hours: number, st_minutes: number, et_hours: number, et_minutes: number): Promise<[number | undefined, Response | undefined]> {
+    try {
+        console.log("setBatteryChargeDetails: forceChargeEnabled: " + forceChargeEnabled +
+            "\nst_hours: " + st_hours +
+            "\nst_minutes: " + st_minutes +
+            "\net_hours: " + et_hours +
+            "\net_minutes: " + et_minutes);
+        accessToken = 'Bearer ' + await accessToken;
+        // console.log('accessToken:' + accessToken);
+        const response = await fetch('https://solar.sherlock.co.uk/setBatteryChargeTimes', {
+            method: 'POST',
+            headers: {
+                'Authorization': accessToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({"enable1": forceChargeEnabled,"startTime1": {"hour": st_hours,"minute": st_minutes},"endTime1": {"hour": et_hours,"minute": et_minutes}})
+        });
+
+        if (response.status !== 200) {
+            console.log('Error: ' + await response.status);
+            return [response.status, undefined];
+        }
+
+        const jsonData = await response.json();
+
+        console.log('response: ', response.status + ' ' + JSON.stringify(jsonData, null, 2));
+        return [response.status, jsonData];
+
+    } catch (error: any) {
+        console.log('Err: ' + error.message);
+        return [undefined, undefined];
+    }
+}
+
+export async function retrieveBatteryChargeDetails(accessToken: string): Promise<[number | undefined, Response | undefined]> {
+    try {
+        accessToken = 'Bearer ' + await accessToken;
+        // console.log('accessToken:' + accessToken);
+        const response = await fetch('https://solar.sherlock.co.uk/retrieveBatteryChargeTimes', {
+            method: 'GET',
+            headers: {
+                'Authorization': accessToken
+            }
+        });
+
+        if (response.status !== 200) {
+            console.log('Error: ' + await response.status);
+            return [response.status, undefined];
+        }
+
+        const jsonData = await response.json();
+
+        // console.log('retrieveMinSOCDetails response: ', response.status + ' ' + JSON.stringify(jsonData, null, 2));
+        return [response.status, jsonData];
+
+    } catch (error: any) {
+        console.log('Err: ' + error.message);
+        return [undefined, undefined];
+    }
+}
+
 export function formatDateTime(dateTimeString: string): string {
     // Split the input string into date, time, and offset parts
     const [date, time, offset] = dateTimeString.split(' ');
