@@ -51,10 +51,7 @@
 				<input type="checkbox" bind:checked={isChecked}>
 				<span class="slider round"></span>
 			</label>
-			<!-- <label class="text-sm text-gray-600" for="st_hours">Enabled: </label> -->
-
 		</div>
-		<!-- <p>Switch is {isChecked ? 'ON' : 'OFF'}</p> -->
 		<div class="ml-[20%] mr-[20%] flex flex-auto items-justify items-center">
 			<label class="text-sm text-gray-600" for="st_hours">Start Time</label>
 		</div>
