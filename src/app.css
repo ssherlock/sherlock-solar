@@ -44,6 +44,10 @@
     @apply block h-12 w-40 px-5 mx-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded
 }
 
+.dgs-button-disabled {
+    @apply block h-12 w-40 px-5 mx-auto bg-gray-400 text-white font-bold py-2 rounded
+}
+
 .download-button {
     @apply block h-12 px-5 mx-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded justify-center items-center
 }  

@@ -1,37 +1,74 @@
 <script lang=ts>
+	import { ReceiptPoundSterling } from "lucide-svelte";
+
 	export let onConfirm: any;
 	export let showBatteryChargeModal: boolean;
 	export let forceChargeEnabled: boolean;
-	export let st_hours: number;
-	export let st_minutes: number;
-	export let et_hours: number;
-	export let et_minutes: number;
-	let errorMessage: string = " ";
+	export let st_hours: string;
+	export let st_minutes: string;
+	export let et_hours: string;
+	export let et_minutes: string;
+	let HOURS = "HOURS";
+	let MINUTES = "MINUTES";
+	let errorMessage: string = "";
 	let dialog: HTMLDialogElement; 
 	let isChecked: boolean = forceChargeEnabled;
 
 	// $: if (dialog && showBatteryChargeModal && socValue) dialog.showModal();
-	$: if (dialog && showBatteryChargeModal) dialog.showModal();
+	$: if (dialog && showBatteryChargeModal) {
+		formatNumbersAsString(st_hours, st_minutes, et_hours, et_minutes);
+		dialog.showModal();
+	}
 
 	const handleDialogResponse = async (response: 'OK' | 'CANCEL') => { 
+		errorMessage = "";
 		if (response === "OK") {
-			if (st_hours > 23 || st_hours < 0 ||
-				et_hours > 23 || et_hours < 0) {
+		
+			if (Number(st_hours) > 23 || Number(st_hours) < 0 ||
+			    Number(et_hours) > 23 || Number(et_hours) < 0) {
 				errorMessage = "Please enter valid times (24 hour format)";
 			} else {
 				dialog.close();
 				onConfirm(isChecked, st_hours, st_minutes, et_hours, et_minutes);
+				formatNumbersAsString(st_hours, st_minutes, et_hours, et_minutes);
 			}
-		} else {
+
+			if (errorMessage === "") {
+				dialog.close();
+			}
+		} else if (response === "CANCEL") {
 			dialog.close();
 		}
 		return;
+	}
+
+	export function formatNumbersAsString(st_hours: string, st_minutes: string, et_hours: string, et_minutes: string) {
+		st_hours = st_hours.toString().padStart(2, '0');
+		st_minutes = st_minutes.toString().padStart(2, '0');
+		et_hours = et_hours.toString().padStart(2, '0');
+		et_minutes = et_minutes.toString().padStart(2, '0');	
 	}
 
 	function handleFocus(event: FocusEvent) {
 		const input = event.target as HTMLInputElement;
 		input.select();
 	}	
+
+
+	function validateNumber(numEntered: string, numType: string): import("svelte/elements").ChangeEventHandler<HTMLInputElement> | null | undefined {
+		errorMessage = "";
+		
+		if (numType === HOURS) {
+			if (Number(numEntered) > 23 || Number(numEntered) < 0) {
+				errorMessage = "Hours must be between 0 and 23";
+			}
+		} else if (numType === MINUTES) {
+			if (Number(numEntered) > 59 || Number(numEntered) < 0) {
+				errorMessage = "Hours must between 0 and 59";
+			}
+		}
+		return;
+	}
 
 </script>
   
@@ -63,6 +100,7 @@
 				min="0"
 				max="23"
 				on:focus={handleFocus}
+				on:change={validateNumber(et_hours, HOURS)}
 			/>
 			&nbsp;:&nbsp;
 			<input
@@ -71,6 +109,7 @@
 				min="0"
 				max="59"
 				on:focus={handleFocus}
+				on:change={validateNumber(st_minutes, MINUTES)}
 			/>
 		</div>
 		<div class="mt-4 ml-[20%] mr-[20%] flex flex-auto items-justify items-center">
@@ -84,6 +123,7 @@
 				min="0"
 				max="23"
 				on:focus={handleFocus}
+				on:change={validateNumber(et_hours, HOURS)}
 			/>
 			&nbsp;:&nbsp;
 			<input
@@ -92,15 +132,20 @@
 				min="0"
 				max="59"
 				on:focus={handleFocus}
+				on:change={validateNumber(et_minutes, MINUTES)}
 			/>
 		</div>		
 		<div class="button-group">
 			<!-- svelte-ignore missing-declaration -->
-			<button class="m-4 dgs-button" on:click={() => handleDialogResponse("OK")}>Ok</button>
+			 {#if errorMessage.length > 0}
+			 	<button class="m-4 dgs-button-disabled" on:click={() => handleDialogResponse("OK")} disabled>Ok</button>
+			 {:else}
+			 	<button class="m-4 dgs-button" on:click={() => handleDialogResponse("OK")}>Ok</button>
+			{/if}
 			<button class="m-4 dgs-button" on:click={() => handleDialogResponse("CANCEL")}>Cancel</button>
 		</div>
 		{#if errorMessage}
-			<div class="text-sm text-red-700">
+			<div class="text-sm text-red-700 text-center font-bold">
 				{errorMessage}
 			</div>
 		{/if}

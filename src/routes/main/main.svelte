@@ -31,10 +31,10 @@
     let showBatteryChargeModal: boolean = false;
     let socValue: number = 0;
     let forceChargeEnabled: boolean = false;
-    let st_hours: number = 0;
-    let st_minutes: number = 0;
-    let et_hours: number = 0;
-    let et_minutes: number = 0;
+    let st_hours: string;
+    let st_minutes: string;
+    let et_hours: string;
+    let et_minutes: string;
     let wakeLock: WakeLockSentinel | null = null;
 
     $: time;
@@ -157,12 +157,12 @@
                     forceChargeEnabled = batteryChargeTimes.result.enable1;
 
                     const startTime1 = batteryChargeTimes.result.startTime1;
-                    st_hours = startTime1.hour;
-                    st_minutes = startTime1.minute;
+                    st_hours = String(startTime1.hour).padStart(2, '0');
+                    st_minutes = String(startTime1.minute).padStart(2, '0');
 
                     const endTime1 = batteryChargeTimes.result.endTime1;
-                    et_hours = endTime1.hour;
-                    et_minutes = endTime1.minute;
+                    et_hours = String(endTime1.hour).padStart(2, '0');
+                    et_minutes = String(endTime1.minute).padStart(2, '0');
                 }
             }
         }
@@ -304,13 +304,13 @@
 
     async function handleBatteryChargeTimeChange(
         forceChargeEnabled: boolean,
-        st_hours: number,
-        st_minutes: number,
-        et_hours: number,
-        et_minutes: number) {       
+        st_hours: string,
+        st_minutes: string,
+        et_hours: string,
+        et_minutes: string) {       
         // console.log(forceChargeEnabled + " " + st_hours + " " + st_minutes + " " + et_hours + " " + et_minutes);
-        if (st_hours < 24 && st_minutes < 60 && et_hours < 24 && et_minutes < 60) {
-            await setBatteryChargeTime(forceChargeEnabled, st_hours, st_minutes, et_hours, et_minutes);
+        if (Number(st_hours) < 24 && Number(st_minutes) < 60 && Number(et_hours) < 24 && Number(et_minutes) < 60) {
+            await setBatteryChargeTime(forceChargeEnabled, Number(st_hours), Number(st_minutes), Number(et_hours), Number(et_minutes));
             await retrieveBatteryChargeTimes();
             showBatteryChargeModal = false;
         } else {
