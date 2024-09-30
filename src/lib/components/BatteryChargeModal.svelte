@@ -25,7 +25,9 @@
 		if (response === "OK") {
 		
 			if (Number(st_hours) > 23 || Number(st_hours) < 0 ||
-			    Number(et_hours) > 23 || Number(et_hours) < 0) {
+			    Number(et_hours) > 23 || Number(et_hours) < 0 ||
+			    Number(st_minutes) > 59 || Number(st_minutes) < 0 ||
+			    Number(et_minutes) > 59 || Number(et_minutes) < 0) {
 				errorMessage = "Please enter valid times (24 hour format)";
 			} else {
 				dialog.close();
@@ -64,7 +66,7 @@
 			}
 		} else if (numType === MINUTES) {
 			if (Number(numEntered) > 59 || Number(numEntered) < 0) {
-				errorMessage = "Hours must between 0 and 59";
+				errorMessage = "Minutes must between 0 and 59";
 			}
 		}
 		return;
