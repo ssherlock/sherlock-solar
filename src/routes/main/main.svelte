@@ -357,10 +357,10 @@
             <div class="text-center text-xs font-semibold text-green-700">{pvPower}</div>
         </div>
         <div class="flex justify-center items-center">
-            {#if pvPowerValue > 0}
-                <Line direction="vertical_fromTopGreen" />
+            {#if pvPowerValue < 0}
+                <Line direction="line-vertical" />    
             {:else}
-                <Line direction="line-vertical" />
+                <Line direction="vertical_fromTopGreen" />                
             {/if}
         </div>
     </div>
