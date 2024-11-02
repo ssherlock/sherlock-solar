@@ -354,10 +354,14 @@
             </div>
         </div>
         <div class="flex justify-center items-center col-span-3">
-            <div class="text-center text-xs font-semibold text-green-700">{pvPower}</div>
+            {#if pvPowerValue <= 0}
+                <div class="text-center text-xs font-semibold text-black">{pvPower}</div>
+            {:else}
+                <div class="text-center text-xs font-semibold text-green-700">{pvPower}</div>
+            {/if}
         </div>
         <div class="flex justify-center items-center">
-            {#if pvPowerValue < 0}
+            {#if pvPowerValue <= 0}
                 <Line direction="line-vertical" />    
             {:else}
                 <Line direction="vertical_fromTopGreen" />                
@@ -408,19 +412,19 @@
         <div style="display: flex; align-items: center;">
             <div class="line-container flex-grow">  
                 {#if loadPowerValue > 0}
-                <Line direction="horizontal_fromLeftRed" />
+                    <Line direction="horizontal_fromLeftRed" />
                 {:else}
-                <Line direction="line-horizontal" />
+                    <Line direction="line-horizontal" />
                 {/if}
             </div>
           <img src="house.png" alt="house" />
         </div>
         <div class="text-right text-xs font-semibold">
-          {#if feedinPowerValue > 0}
-            <div class="text-red-700">{loadPower}</div>
-          {:else}
-            {loadPower}
-          {/if}
+            {#if loadPowerValue > 0}
+                <div class="text-red-700">{loadPower}</div>
+            {:else}
+                {loadPower}
+            {/if}
         </div>
     </div>
     <div class="flex flex-col justify-center items-center">
