@@ -36,6 +36,7 @@
     let et_hours: string;
     let et_minutes: string;
     let wakeLock: WakeLockSentinel | null = null;
+    let errorMessage: string = "";
 
     $: time;
     $: pvPower;
@@ -193,9 +194,15 @@
             await requestWakeLock();
 
             //Live
-            const [status, responseData] = await retrieveSolarDetails(accessToken);
-            await retrieveMinSOC();
-            await retrieveBatteryChargeTimes();
+            let [status, responseData] = await retrieveSolarDetails(accessToken);
+            if (!responseData?.msg.includes('Unrecognized msg')) {
+                console.log("Unrecognized msg: " + JSON.stringify(responseData));              
+                await retrieveMinSOC();
+                await retrieveBatteryChargeTimes();
+            } else {
+                status = 422;
+                errorMessage = "Error: " + JSON.stringify(responseData.msg);
+            }
             
             //Turn off the wakelock setting so the screen can dim once ready
             await releaseWakeLock();
@@ -203,6 +210,7 @@
             // let status = 200; 
             if (status === 200) {
                 if (responseData) {
+                    // console.log("responseData: " + JSON.stringify(responseData));
 
                     // Access properties only after the check
                     const socData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'SoC');
@@ -267,8 +275,10 @@
                     console.error("Error parsing JSON response data");
                 }
             } else {
-                window.location.reload();
+                errorMessage = "Error. Status returned: " + status;
             }
+        } else {
+            errorMessage = "Login expired. Please login again.";
         }
     }
 
@@ -468,27 +478,32 @@
         </div>
     </div>
 </div>   
-<div class="flex justify-center items-center">
-    <div class="text-center text-sm font-semibold">Last Updated: <span class="text-green-700">{time}</span>
-        <center class="pt-4">
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div on:click|preventDefault={() =>{showSpinner = true}}>
-                {#if showSpinner}
-                    {#await retrieveValues()}
-                        <p>Loading. Please wait ...</p>
-                        <SyncLoader size="60" color="#000000" unit="px" duration="1s" />
-                    {:then} 
-                        showSpinner = false;
+{#if errorMessage.length > 0}
+    <div class="text-center text-sm font-semibold"><span class="text-red-700">{errorMessage}</span></div>
+{:else}
+    <div class="flex justify-center items-center">
+        <div class="text-center text-sm font-semibold">Last Updated: <span class="text-green-700">{time}</span>
+            <center class="pt-4">
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div on:click|preventDefault={() =>{showSpinner = true}}>
+                    {#if showSpinner}
+                        {#await retrieveValues()}
+                            <p>Loading. Please wait ...</p>
+                            <SyncLoader size="60" color="#000000" unit="px" duration="1s" />
+                        {:then} 
+                            <!-- {showSpinner = false} -->
+                            <svelte:component class="justify-center" this={RefreshCcw} />
+                        {/await}  
+                    {:else}
+                        <!-- {showSpinner = false} -->
                         <svelte:component class="justify-center" this={RefreshCcw} />
-                    {/await}  
-                {:else}
-                    <svelte:component class="justify-center" this={RefreshCcw} />
-                {/if}
-            </div>
-        </center>
+                    {/if}
+                </div>
+            </center>
+        </div>
     </div>
-</div>
+{/if}
 {#if showSOCModal}
   <SOCModal bind:showSOCModal socValue={socValue} onConfirm={handleSOCChange}> 
     <h2 slot="header">

@@ -54,7 +54,7 @@ export async function retrieveSolarDetails(accessToken: string): Promise<[number
 
         const jsonData = await response.json();
 
-        // console.log('retrieveSolarDetails response: ', response.status + ' ' + JSON.stringify(jsonData));
+        console.log('retrieveSolarDetails response: ', response.status + ' ' + JSON.stringify(jsonData));
         return [response.status, jsonData];
 
     } catch (error: any) {
