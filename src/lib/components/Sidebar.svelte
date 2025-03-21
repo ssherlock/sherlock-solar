@@ -24,12 +24,16 @@
   </button>
   <nav class="pt-2 pl-4 pb-2 text-xl">
     <!-- TODO: Make this call the functions rather than do full refresh-->
-    <a class="block" href="/main" on:click={() => (open = false)}>Home</a>
-    <hr class="border-1 border-gray-500" />
     <!-- svelte-ignore a11y-invalid-attribute -->
+    <!-- <a class="block" href="" on:click={() => (open = false)}>Home</a>
+    <hr class="border-1 border-gray-500" /> -->
+    <!-- svelte-ignore a11y-invalid-attribute -->
+    <!-- <a href="" on:click={() => pingFoxESS}>Ping Service</a>
+    <hr class="border-1 border-gray-500" /> -->
     <a href="" on:click={() => {handleSignOut()}}>Sign Out</a>
   </nav>
 </aside>
+
 
 <style>
   aside {

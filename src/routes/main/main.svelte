@@ -1,13 +1,13 @@
 <script lang="ts">
     import Battery from '$lib/components/Battery.svelte';
     import authStore, { type AuthState } from '../../stores/authStore';
-    import { ChargingState, formatDateTime, retrieveBatteryChargeDetails, retrieveMinSOCDetails, retrieveSolarDetails, setBatteryChargeDetails, setMinSOCDetails } from '../../solar-utils';
+    import { ChargingState, formatDateTime, pingService, retrieveBatteryChargeDetails, retrieveMinSOCDetails, retrieveSolarDetails, setBatteryChargeDetails, setMinSOCDetails } from '../../solar-utils';
 	import Line from '$lib/components/Line.svelte';
-	import { RefreshCcw } from 'lucide-svelte';
+	import { RefreshCcw, ShieldCheck } from 'lucide-svelte';
 	import { SyncLoader } from 'svelte-loading-spinners';
 	import SOCModal from '$lib/components/SOCModal.svelte';
 	import BatteryChargeModal from '$lib/components/BatteryChargeModal.svelte';
-
+		
     let percentage: number = 0;
     let time: string = '';
     let pvPower: string = '';
@@ -52,11 +52,6 @@
         variable: string;
     }
 
-    interface Result {
-        datas: Data[];
-        deviceSN: string;
-        time: string;
-    }
 
     interface BatteryChargeTimes {
         errno: number;
@@ -169,7 +164,31 @@
         }
     }
 
+    export async function pingFoxESS() {
+        console.log("pingFoxESS");
+        await authStore.subscribe((state: AuthState) => {
+            isAuthenticated = state.isAuthenticated;
+            accessToken = state.accessToken;
+            user = state.user;
+        });
+
+        // let accessToken = "dummy";
+        if (accessToken) {
+            const [status, responseData] = await pingService(accessToken);
+
+            // let status = 200; 
+            if (status !== null) {    
+                errorMessage = "Ping Status: " + responseData?.status + "\nMessage: " + responseData?.message;
+                console.log("Ping Response: " + errorMessage);
+            } else {
+                errorMessage = "Ping Call Failed";
+                console.error("Error: " + status);
+            }
+        }        
+    }
+
     async function retrieveValues() {
+        errorMessage = "";
         await authStore.subscribe((state: AuthState) => {
             isAuthenticated = state.isAuthenticated;
             accessToken = state.accessToken;
@@ -194,92 +213,101 @@
             await requestWakeLock();
 
             //Live
-            let [status, responseData] = await retrieveSolarDetails(accessToken);
-            if (!responseData?.msg.includes('Unrecognized msg')) {
-                console.log("Unrecognized msg: " + JSON.stringify(responseData));              
-                await retrieveMinSOC();
-                await retrieveBatteryChargeTimes();
-            } else {
-                status = 422;
-                errorMessage = "Error: " + JSON.stringify(responseData.msg);
-            }
-            
-            //Turn off the wakelock setting so the screen can dim once ready
-            await releaseWakeLock();
-
-            // let status = 200; 
-            if (status === 200) {
-                if (responseData) {
-                    // console.log("responseData: " + JSON.stringify(responseData));
-
-                    // Access properties only after the check
-                    const socData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'SoC');
-                    if (socData) { // Check if socData is found before accessing its value
-                        percentage = socData.value;
-                    }
-
-                    time = await formatDateTime(responseData.result[0].time);
-
-                    const pvPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'pvPower');
-                    if (pvPowerData) {
-                        pvPowerValue = pvPowerData.value;
-                        pvPower = displayValue(pvPowerData.value);
-                    }
-
-                    const batDischargePowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'batDischargePower');
-                    if (batDischargePowerData) {
-                        batDischargePowerValue = batDischargePowerData.value;
-                        batDisChargePower = displayValue(batDischargePowerData.value);
-                    }
-                    const batChargePowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'batChargePower');
-                    if (batChargePowerData) {
-                        batChargePowerValue = batChargePowerData.value;
-                        batChargePower = displayValue(batChargePowerData.value);
-                    }
-
-                    if (batChargePowerData && batDischargePowerData) {
-                        if (batDischargePowerData.value === 0 && batChargePowerData.value === 0) {
-                            chargingState = ChargingState.Nothing;
-                        } else if (batDischargePowerData.value > 0 && batChargePowerData.value === 0) {
-                            chargingState = ChargingState.Discharging;
-                        } else if (batDischargePowerData.value === 0 && batChargePowerData.value > 0) {
-                            chargingState = ChargingState.Charging;
-                        }
-                    }
-
-                    //Grid Consumption vs Feed-in power
-                    const gridConsumptionPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'gridConsumptionPower');
-                    if (gridConsumptionPowerData) {
-                        gridConsumptionPowerValue = gridConsumptionPowerData.value;
-                        // gridConsumptionPower = String(gridConsumptionPowerValue) + " " + await gridConsumptionPowerData.unit;
-                        gridConsumptionPower = displayValue(gridConsumptionPowerData.value);
-                    }
-
-                    const feedinPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'feedinPower');
-                    if (feedinPowerData) {
-                        feedinPowerValue = feedinPowerData.value;
-                        // feedinPower = String(feedinPowerValue) + " " + await feedinPowerData.unit;
-                        feedinPower = displayValue(feedinPowerData.value);
-                    }
-
-                    const loadPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'loadsPower');
-                    if (loadPowerData) {
-                        loadPowerValue = loadPowerData.value;
-                        // loadPower = String(loadPowerValue) + " " + await loadPowerData.unit;
-                        loadPower = displayValue(loadPowerData.value);
-                    }
-
-                    showSpinner = false;
-                    return;
+            try {
+                let [status, responseData] = await retrieveSolarDetails(accessToken);
+                if (!responseData?.msg.includes('Unrecognized msg')) {
+                    console.log("Unrecognized msg: " + JSON.stringify(responseData));              
+                    await retrieveMinSOC();
+                    await retrieveBatteryChargeTimes();
                 } else {
-                    console.error("Error parsing JSON response data");
+                    status = 422;
+                    errorMessage = "Error: " + JSON.stringify(responseData.msg);
                 }
-            } else {
-                errorMessage = "Error. Status returned: " + status;
+                
+                //Turn off the wakelock setting so the screen can dim once ready
+                await releaseWakeLock();
+
+                // let status = 401; 
+                if (status === 200) {
+                    if (responseData) {
+                        // console.log("responseData: " + JSON.stringify(responseData));
+
+                        // Access properties only after the check
+                        const socData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'SoC');
+                        if (socData) { // Check if socData is found before accessing its value
+                            percentage = socData.value;
+                        }
+
+                        time = await formatDateTime(responseData.result[0].time);
+
+                        const pvPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'pvPower');
+                        if (pvPowerData) {
+                            pvPowerValue = pvPowerData.value;
+                            pvPower = displayValue(pvPowerData.value);
+                        }
+
+                        const batDischargePowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'batDischargePower');
+                        if (batDischargePowerData) {
+                            batDischargePowerValue = batDischargePowerData.value;
+                            batDisChargePower = displayValue(batDischargePowerData.value);
+                        }
+                        const batChargePowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'batChargePower');
+                        if (batChargePowerData) {
+                            batChargePowerValue = batChargePowerData.value;
+                            batChargePower = displayValue(batChargePowerData.value);
+                        }
+
+                        if (batChargePowerData && batDischargePowerData) {
+                            if (batDischargePowerData.value === 0 && batChargePowerData.value === 0) {
+                                chargingState = ChargingState.Nothing;
+                            } else if (batDischargePowerData.value > 0 && batChargePowerData.value === 0) {
+                                chargingState = ChargingState.Discharging;
+                            } else if (batDischargePowerData.value === 0 && batChargePowerData.value > 0) {
+                                chargingState = ChargingState.Charging;
+                            }
+                        }
+
+                        //Grid Consumption vs Feed-in power
+                        const gridConsumptionPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'gridConsumptionPower');
+                        if (gridConsumptionPowerData) {
+                            gridConsumptionPowerValue = gridConsumptionPowerData.value;
+                            // gridConsumptionPower = String(gridConsumptionPowerValue) + " " + await gridConsumptionPowerData.unit;
+                            gridConsumptionPower = displayValue(gridConsumptionPowerData.value);
+                        }
+
+                        const feedinPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'feedinPower');
+                        if (feedinPowerData) {
+                            feedinPowerValue = feedinPowerData.value;
+                            // feedinPower = String(feedinPowerValue) + " " + await feedinPowerData.unit;
+                            feedinPower = displayValue(feedinPowerData.value);
+                        }
+
+                        const loadPowerData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'loadsPower');
+                        if (loadPowerData) {
+                            loadPowerValue = loadPowerData.value;
+                            // loadPower = String(loadPowerValue) + " " + await loadPowerData.unit;
+                            loadPower = displayValue(loadPowerData.value);
+                        }
+
+                        showSpinner = false;
+                        return;
+                    } else {
+                        console.error("Error parsing JSON response data");
+                    }
+                } else if (status === 401) {
+                    errorMessage = "Status: " + status + " Login expired.";
+                    window.location.href = "/";
+
+                } else {
+                    errorMessage = "Error. Status returned: " + status;
+                }
+            } catch (Error: any) {
+                errorMessage = "Error: " + Error.message;
             }
         } else {
             errorMessage = "Login expired. Please login again.";
         }
+
     }
 
     const displayValue = (value: number) => {
@@ -479,11 +507,38 @@
     </div>
 </div>   
 {#if errorMessage.length > 0}
-    <div class="text-center text-sm font-semibold"><span class="text-red-700">{errorMessage}</span></div>
+    <div class="text-center text-sm font-semibold">
+        <span class="text-red-700">
+            {@html errorMessage?.replace?.(/\n/g,'<br>') ?? ''}
+        </span>
+        <div class="flex justify-center items-center">
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div on:click|preventDefault={() =>{showSpinner = true}}>
+                {#if showSpinner}
+                    {#await retrieveValues()}
+                        <p>Loading. Please wait ...</p>
+                        <SyncLoader size="60" color="#000000" unit="px" duration="1s" />
+                    {:then} 
+                        <!-- {showSpinner = false} -->
+                        <svelte:component class="justify-center" this={RefreshCcw} />
+                    {/await}  
+                {:else}
+                    <!-- {showSpinner = false} -->
+                    <svelte:component class="justify-center" this={RefreshCcw} />
+                {/if}
+            </div>
+        </div>
+    </div>
 {:else}
     <div class="flex justify-center items-center">
         <div class="text-center text-sm font-semibold">Last Updated: <span class="text-green-700">{time}</span>
-            <center class="pt-4">
+            <div class="flex justify-center items-center gap-4 pt-4">
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-interactive-supports-focus -->
+                <div role="button" on:click={() =>{pingFoxESS()}}>
+                    <svelte:component class="justify-center" this={ShieldCheck} />
+                </div>
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <div on:click|preventDefault={() =>{showSpinner = true}}>
@@ -500,7 +555,7 @@
                         <svelte:component class="justify-center" this={RefreshCcw} />
                     {/if}
                 </div>
-            </center>
+            </div>
         </div>
     </div>
 {/if}

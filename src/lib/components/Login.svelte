@@ -3,38 +3,38 @@
 	import authStore from "../../stores/authStore";
 	import Line from "./Line.svelte";
 
-    let email: string = '';
-    let password: string = '';
-    let accessToken: string = '';
-    let displayMessage: string = '';
-    let displayType: string = '';
+  let email: string = '';
+  let password: string = '';
+  let accessToken: string = '';
+  let displayMessage: string = '';
+  let displayType: string = '';
 
-    const userData: User = {
-          emailAddress: email,
-          password: password,
-      };
-  
-    const handleLogin = async (emailAddress: string, password: string) => {
-        //TODO: error handling for empty fields
-        const user: any | null = await login(emailAddress, password);
-        if (user.status === 200) {
-          displayType = "SUCCESS";
-          displayMessage = "Login Successful";
-          // console.log('response.data: ', response.data);
-          accessToken = await user.data.accessToken;
-          // console.log('accessToken: ', accessToken);
-          authStore.update(state => ({
-            isAuthenticated: true,
-            accessToken: accessToken,
-            user
-          }));
-        } else {
-          displayType = "ERROR";
-          displayMessage = "Login Unsuccessful";
-        }
-        
-        // console.log('repsonse: ', JSON.stringify(response));
+  const userData: User = {
+        emailAddress: email,
+        password: password,
+    };
+
+  const handleLogin = async (emailAddress: string, password: string) => {
+      //TODO: error handling for empty fields
+      const user: any | null = await login(emailAddress, password);
+      if (user.status === 200) {
+        displayType = "SUCCESS";
+        displayMessage = "Login Successful";
+        // console.log('response.data: ', response.data);
+        accessToken = await user.data.accessToken;
         // console.log('accessToken: ', accessToken);
+        authStore.update(state => ({
+          isAuthenticated: true,
+          accessToken: accessToken,
+          user
+        }));
+      } else {
+        displayType = "ERROR";
+        displayMessage = "Login Unsuccessful";
+      }
+      
+      // console.log('repsonse: ', JSON.stringify(response));
+      // console.log('accessToken: ', accessToken);
     }; 
 
     const sendResetLink = async (email:string) => {

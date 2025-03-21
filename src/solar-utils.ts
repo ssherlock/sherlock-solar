@@ -36,6 +36,33 @@ export async function login(emailAddress: string, password: string): Promise<{ s
     password: string;
   }
 
+  export async function pingService(accessToken: string): Promise<[number | undefined, Response | undefined]> {
+    try {
+        accessToken = 'Bearer ' + await accessToken;
+        // console.log('accessToken:' + accessToken);
+        const response = await fetch('https://solar.sherlock.co.uk/ping', {
+            method: 'GET',
+            headers: {
+                'Authorization': accessToken
+            }
+        });
+
+        if (response.status !== 200) {
+            console.log('Error: ' + await response.status);
+            return [response.status, undefined];
+        }
+
+        const jsonData = await response.json();
+
+        console.log('ping response: ', response.status + ' ' + JSON.stringify(jsonData));
+        return [response.status, jsonData];
+
+    } catch (error: any) {
+        console.log('Err: ' + error.message);
+        return [undefined, undefined];
+    }
+}  
+
 export async function retrieveSolarDetails(accessToken: string): Promise<[number | undefined, Response | undefined]> {
     try {
         accessToken = 'Bearer ' + await accessToken;
