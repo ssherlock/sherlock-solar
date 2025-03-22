@@ -536,16 +536,20 @@
             <div class="flex justify-center items-center gap-4 pt-4">
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <!-- svelte-ignore a11y-interactive-supports-focus -->
-                <div role="button" on:click={() =>{pingFoxESS()}}>
-                    <svelte:component class="justify-center" this={ShieldCheck} />
-                </div>
+                {#if !showSpinner}
+                    <div role="button" on:click={() =>{pingFoxESS()}}>
+                        <svelte:component class="justify-center" this={ShieldCheck} />
+                    </div>
+                {/if}
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <div on:click|preventDefault={() =>{showSpinner = true}}>
                     {#if showSpinner}
                         {#await retrieveValues()}
                             <p>Loading. Please wait ...</p>
-                            <SyncLoader size="60" color="#000000" unit="px" duration="1s" />
+                            <div class="flex justify-center items-center">
+                                <SyncLoader size="60" color="#000000" unit="px" duration="1s" />
+                            </div>
                         {:then} 
                             <!-- {showSpinner = false} -->
                             <svelte:component class="justify-center" this={RefreshCcw} />
