@@ -216,9 +216,15 @@
             try {
                 let [status, responseData] = await retrieveSolarDetails(accessToken);
                 if (!responseData?.msg.includes('Unrecognized msg')) {
-                    console.log("Unrecognized msg: " + JSON.stringify(responseData));              
-                    await retrieveMinSOC();
-                    await retrieveBatteryChargeTimes();
+                    if ([40402, 40400].includes(responseData?.errno)) {
+                        //40402 and 40400 mean request has exceeded API calls quota for the day
+                        showSpinner = false;
+                        errorMessage = "Error: " + JSON.stringify(responseData?.msg);
+                        return;
+                    } else {            
+                        await retrieveMinSOC();
+                        await retrieveBatteryChargeTimes();
+                    }
                 } else {
                     status = 422;
                     errorMessage = "Error: " + JSON.stringify(responseData.msg);
@@ -230,8 +236,6 @@
                 // let status = 401; 
                 if (status === 200) {
                     if (responseData) {
-                        // console.log("responseData: " + JSON.stringify(responseData));
-
                         // Access properties only after the check
                         const socData = await responseData.result[0].datas.find((data: { variable: string; }) => data.variable === 'SoC');
                         if (socData) { // Check if socData is found before accessing its value
@@ -299,6 +303,7 @@
                     window.location.href = "/";
 
                 } else {
+                    console.error("Error: " + status);
                     errorMessage = "Error. Status returned: " + status;
                 }
             } catch (Error: any) {
